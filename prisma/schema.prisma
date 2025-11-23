@@ -1,0 +1,89 @@
+// Model in PascalCase with a singular name and a @@map in snake_case and plural name
+// Model keys must be in camelCase and match entity keys and have a @map in snake_case
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client" // Output path for the generated client -> Generated with pnpm prisma generate
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  COMMON
+}
+
+model User {
+  id String @id @default(uuid())
+
+  cpf      String   @unique
+  name     String
+  email    String   @unique
+  password String
+  role     UserRole @default(COMMON)
+
+  baseId    String @map("base_id")
+  companyId String @map("company_id")
+
+  isActive   Boolean @default(true) @map("is_active")
+  firstLogin Boolean @default(true) @map("first_login")
+
+  avatarId String? @map("avatar_id")
+
+  notifications Notification[]
+
+  company Company @relation(fields: [companyId], references: [id])
+  base    Base    @relation(fields: [baseId], references: [id])
+  avatar  Avatar? @relation(fields: [avatarId], references: [id])
+
+  @@map("users")
+}
+
+model Company {
+  id   String @id @default(uuid())
+  name String @unique
+  cnpj String @unique
+
+  users User[]
+  bases Base[]
+
+  @@map("companies")
+}
+
+model Base {
+  id        String @id @default(uuid())
+  name      String
+  companyId String @map("company_id")
+
+  users User[]
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([name, companyId])
+  @@map("bases")
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  recipientId String    @map("recipient_id")
+  title       String
+  content     String
+  readAt      DateTime? @map("read_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  recipient User @relation(fields: [recipientId], references: [id])
+
+  @@map("notifications")
+}
+
+model Avatar {
+  id    String @id @default(uuid())
+  title String
+  url   String @unique
+
+  users User[]
+
+  @@map("avatars")
+}

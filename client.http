@@ -1,0 +1,92 @@
+@baseURL = http://localhost:3333 
+@authToken = {{authentificate.response.body.accessToken}}
+
+# @name authentificate
+POST {{baseURL}}/authenticate
+Content-Type: application/json
+
+{
+  "email": "max@test.com.br",
+  "password": "123456"
+}
+###
+# @name authentificate
+POST {{baseURL}}/authenticate
+Content-Type: application/json
+
+{
+  "email": "COMMON_USER@test.com.br",
+  "password": "123456"
+}
+###
+
+# @name create_company
+POST {{baseURL}}/companies
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+ 
+{
+    "name": "Test_Company",
+    "cnpj": "41735673000177"
+}
+###
+
+# @name fetch_companies
+GET {{baseURL}}/companies?page=1&pageSize=10
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+ 
+
+###
+
+# @name create_base
+POST {{baseURL}}/bases
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+ 
+{
+    "name": "Test_Base_4",
+    "companyId": "351d141d-2465-4ba3-a766-c86ae84c8a2b"
+}
+###
+
+# @name fetch_bases
+GET {{baseURL}}/bases/351d141d-2465-4ba3-a766-c86ae84c8a2b
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+ 
+
+###
+
+# @name create_account
+POST {{baseURL}}/accounts
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "cpf" : "415.572.120-15",
+    "name": "Max",
+    "email": "max@test.com.br",
+    "password": "123456",
+    "role" : "ADMIN",
+    "companyId": "351d141d-2465-4ba3-a766-c86ae84c8a2b",
+    "baseId" : "a24d05f0-1591-4310-b679-aadefc50375e"
+}
+###
+
+# @name fetch_accounts
+GET {{baseURL}}/accounts
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+
+# @name test_server_guards
+GET  {{baseURL}}/test-guards
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+ 
+
+ 
+
