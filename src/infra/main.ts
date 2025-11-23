@@ -9,7 +9,7 @@ async function bootstrap() {
   });
 
   const config = new DocumentBuilder()
-    .setTitle("Base NestJS Start Project")
+    .setTitle("Electrical Distribution Network Budgeting NestJS Start Project")
     .setDescription("Some base stuffs to start a NestJS project")
     .setVersion("1.0")
     .build();

@@ -59,7 +59,11 @@ export class ProjectMaterial extends Entity<ProjectMaterialProps> {
   }
 
   get groupSpecs():
-    | { groupId: UniqueEntityID; utilityPoleLevel: number }
+    | {
+        groupId: UniqueEntityID;
+        utilityPoleLevel: number;
+        tensionLevel: "LOW" | "MEDIUM";
+      }
     | undefined {
     return this.props.groupSpecs;
   }

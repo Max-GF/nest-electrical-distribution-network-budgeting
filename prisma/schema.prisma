@@ -87,3 +87,165 @@ model Avatar {
 
   @@map("avatars")
 }
+
+enum TensionLevel {
+  LOW
+  MEDIUM
+}
+
+model Project {
+  id                      String    @id @default(uuid())
+  name                    String
+  description             String
+  budgetAlreadyCalculated Boolean   @map("budget_already_calculated")
+  lastBudgetCalculatedAt  DateTime? @map("last_budget_calculated_at")
+
+  points           Point[]
+  projectMaterials ProjectMaterial[]
+
+  @@map("projects")
+}
+
+model Material {
+  id          String       @id @default(uuid())
+  code        Int          @unique
+  description String
+  unit        String
+  tension     TensionLevel
+
+  groupItems GroupItem[]
+
+  @@map("materials")
+}
+
+model UtilityPole {
+  id          String @id @default(uuid())
+  code        Int    @unique
+  description String
+  unit        String
+
+  strongSideSectionMultiplier              Float @map("strong_side_section_multiplier")
+  mediumVoltageLevelsCount                 Int   @map("medium_voltage_levels_count")
+  mediumVoltageStartSectionLengthInMM      Float @map("medium_voltage_start_section_length_in_mm")
+  mediumVoltageSectionLengthAddBylevelInMM Float @map("medium_voltage_section_length_add_bylevel_in_mm")
+  lowVoltageLevelsCount                    Int   @map("low_voltage_levels_count")
+  lowVoltageStartSectionLengthInMM         Float @map("low_voltage_start_section_length_in_mm")
+  lowVoltageSectionLengthAddBylevelInMM    Float @map("low_voltage_section_length_add_bylevel_in_mm")
+
+  points Point[]
+
+  @@map("utility_poles")
+}
+
+model Cable {
+  id              String       @id @default(uuid())
+  code            Int          @unique
+  description     String
+  unit            String
+  tension         TensionLevel
+  sectionAreaInMM Float        @map("section_area_in_mm")
+
+  pointsAsMediumEntrance Point[] @relation("MediumTensionEntranceCable")
+  pointsAsMediumExit     Point[] @relation("MediumTensionExitCable")
+  pointsAsLowEntrance    Point[] @relation("LowTensionEntranceCable")
+  pointsAsLowExit        Point[] @relation("LowTensionExitCable")
+
+  @@map("cables")
+}
+
+model CableConnector {
+  id          String @id @default(uuid())
+  code        Int    @unique
+  description String
+  unit        String
+
+  entranceMinValueMM Float @map("entrance_min_value_mm")
+  entranceMaxValueMM Float @map("entrance_max_value_mm")
+  exitMinValueMM     Float @map("exit_min_value_mm")
+  exitMaxValueMM     Float @map("exit_max_value_mm")
+
+  @@map("cable_connectors")
+}
+
+model PoleScrew {
+  id          String @id @default(uuid())
+  code        Int    @unique
+  description String
+  unit        String
+  lengthInMM  Float  @map("length_in_mm")
+
+  @@map("pole_screws")
+}
+
+model Group {
+  id          String       @id @default(uuid())
+  name        String
+  description String
+  tension     TensionLevel
+
+  items GroupItem[]
+
+  @@map("groups")
+}
+
+model GroupItem {
+  id          String  @id @default(uuid())
+  groupId     String  @map("group_id")
+  quantity    Float
+  addByPhase  Float   @map("add_by_phase")
+  description String?
+  type        String // "material", "poleScrew", "cableConnector"
+
+  // Specific fields
+  materialId            String?  @map("material_id")
+  lengthAdd             Float?   @map("length_add")
+  localCableSectionInMM Float?   @map("local_cable_section_in_mm")
+  oneSideConnector      Boolean? @map("one_side_connector")
+
+  group    Group     @relation(fields: [groupId], references: [id])
+  material Material? @relation(fields: [materialId], references: [id])
+
+  @@map("group_items")
+}
+
+model Point {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  projectId   String  @map("project_id")
+
+  mediumTensionEntranceCableId String? @map("medium_tension_entrance_cable_id")
+  mediumTensionExitCableId     String? @map("medium_tension_exit_cable_id")
+  lowTensionEntranceCableId    String? @map("low_tension_entrance_cable_id")
+  lowTensionExitCableId        String? @map("low_tension_exit_cable_id")
+  utilityPoleId                String? @map("utility_pole_id")
+
+  project                    Project      @relation(fields: [projectId], references: [id])
+  mediumTensionEntranceCable Cable?       @relation("MediumTensionEntranceCable", fields: [mediumTensionEntranceCableId], references: [id])
+  mediumTensionExitCable     Cable?       @relation("MediumTensionExitCable", fields: [mediumTensionExitCableId], references: [id])
+  lowTensionEntranceCable    Cable?       @relation("LowTensionEntranceCable", fields: [lowTensionEntranceCableId], references: [id])
+  lowTensionExitCable        Cable?       @relation("LowTensionExitCable", fields: [lowTensionExitCableId], references: [id])
+  utilityPole                UtilityPole? @relation(fields: [utilityPoleId], references: [id])
+
+  projectMaterials ProjectMaterial[]
+
+  @@map("points")
+}
+
+model ProjectMaterial {
+  id        String @id @default(uuid())
+  projectId String @map("project_id")
+  itemId    String @map("item_id")
+  itemType  String @map("item_type") // "material", "poleScrew", "cableConnector", "utilityPole", "cable"
+  quantity  Float
+
+  pointId          String?       @map("point_id")
+  groupId          String?       @map("group_id")
+  utilityPoleLevel Int?          @map("utility_pole_level")
+  tensionLevel     TensionLevel? @map("tension_level")
+
+  project Project @relation(fields: [projectId], references: [id])
+  point   Point?  @relation(fields: [pointId], references: [id])
+
+  @@map("project_materials")
+}
