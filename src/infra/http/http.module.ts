@@ -1,4 +1,8 @@
 import { Module } from "@nestjs/common";
+import { CreateBulkOfCablesUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/create-bulk-of-cables";
+import { CreateCableUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/create-cable";
+import { EditCableUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/edit-cable";
+import { FetchCablesWithFilterOptionsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/fetch-cables-with-filter-options";
 import { ReadNotificationUseCase } from "src/domain/notification/application/use-cases/read-notification";
 import { DownloadUserAvatarByIdUseCase } from "src/domain/user-management/application/use-cases/avatar/download-user-avatar";
 import { UploadAndCreateUserAvatarUseCase } from "src/domain/user-management/application/use-cases/avatar/upload-and-create-user-avatar";
@@ -18,6 +22,10 @@ import { CacheModule } from "../cache/cache.module";
 import { CryptographyModule } from "../cryptography/cryptography.module";
 import { DatabaseModule } from "../database/database.module";
 import { StorageModule } from "../storage/storage.module";
+import { CreateBulkOfCablesController } from "./controllers/eletrical-distribution-budgeting/cable/create-bulk-of-cables.controller";
+import { CreateCableController } from "./controllers/eletrical-distribution-budgeting/cable/create-cable.controller";
+import { EditCableController } from "./controllers/eletrical-distribution-budgeting/cable/edit-cable.controller";
+import { FetchCablesWithFilterOptionsController } from "./controllers/eletrical-distribution-budgeting/cable/fetch-cables-with-filter-options.controller";
 import { ReadNotificationController } from "./controllers/notification/read-notification.controller";
 import { DownloadUserAvatarByIdController } from "./controllers/user-management/avatar/download-user-avatar.controller";
 import { UploadAndCreateUserAvatarController } from "./controllers/user-management/avatar/upload-and-create-user-avatar.controller";
@@ -54,6 +62,10 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     EditCompanyController,
     EditUserController,
     RefreshAccessTokenController,
+    CreateCableController,
+    CreateBulkOfCablesController,
+    EditCableController,
+    FetchCablesWithFilterOptionsController,
   ],
   providers: [
     CreateCompanyUseCase,
@@ -71,6 +83,10 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     EditCompanyUseCase,
     EditUserUseCase,
     RefreshAccessTokenUseCase,
+    CreateCableUseCase,
+    CreateBulkOfCablesUseCase,
+    EditCableUseCase,
+    FetchCablesWithFilterOptionsUseCase,
   ],
 })
 export class HttpModule {}

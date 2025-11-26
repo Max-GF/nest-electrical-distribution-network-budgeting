@@ -6,7 +6,7 @@ import { Cable } from "src/domain/eletrical-distribution-budgeting/enterprise/en
 import { TensionLevel } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
 import { CablesRepository } from "../../repositories/cables-repository";
 
-interface FetchWithFilterCableUseCaseRequest {
+interface FetchCablesWithFilterOptionsUseCaseRequest {
   codes?: number[];
   description?: string;
 
@@ -18,7 +18,7 @@ interface FetchWithFilterCableUseCaseRequest {
   pageSize?: number;
 }
 
-type FetchWithFilterCableUseCaseResponse = Either<
+type FetchCablesWithFilterOptionsUseCaseResponse = Either<
   NotAllowedError,
   {
     cables: Cable[];
@@ -27,7 +27,7 @@ type FetchWithFilterCableUseCaseResponse = Either<
 >;
 
 @Injectable()
-export class FetchWithFilterCableUseCase {
+export class FetchCablesWithFilterOptionsUseCase {
   constructor(private cablesRepository: CablesRepository) {}
 
   async execute({
@@ -38,7 +38,7 @@ export class FetchWithFilterCableUseCase {
     minSectionAreaInMM,
     page,
     pageSize,
-  }: FetchWithFilterCableUseCaseRequest): Promise<FetchWithFilterCableUseCaseResponse> {
+  }: FetchCablesWithFilterOptionsUseCaseRequest): Promise<FetchCablesWithFilterOptionsUseCaseResponse> {
     const upperCasedTension = tension ? tension.toUpperCase() : undefined;
     if (
       upperCasedTension !== undefined &&

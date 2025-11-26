@@ -2,15 +2,15 @@ import { Cable } from "src/domain/eletrical-distribution-budgeting/enterprise/en
 import { TensionLevel } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
 import { makeCable } from "test/factories/eletrical-distribution-budgeting/make-cable";
 import { InMemoryCablesRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-cables-repository";
-import { FetchWithFilterCableUseCase } from "./fetch-cables-with-filter-options";
+import { FetchCablesWithFilterOptionsUseCase } from "./fetch-cables-with-filter-options";
 
 let inMemoryCablesRepository: InMemoryCablesRepository;
-let sut: FetchWithFilterCableUseCase;
+let sut: FetchCablesWithFilterOptionsUseCase;
 
 describe("Fetch cables with options", () => {
   beforeEach(() => {
     inMemoryCablesRepository = new InMemoryCablesRepository();
-    sut = new FetchWithFilterCableUseCase(inMemoryCablesRepository);
+    sut = new FetchCablesWithFilterOptionsUseCase(inMemoryCablesRepository);
   });
 
   it("should be able to fetch cables with diferent options", async () => {
