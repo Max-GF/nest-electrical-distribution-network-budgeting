@@ -1,13 +1,13 @@
 import { INestApplication } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Test } from "@nestjs/testing";
+import { MaterialsRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/materials-repository";
 import { AppModule } from "src/infra/app.module";
 import { DatabaseModule } from "src/infra/database/database.module";
-import { MaterialsRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/materials-repository";
+import request from "supertest";
 import { makeBase } from "test/factories/user-management/make-base";
 import { makeCompany } from "test/factories/user-management/make-company";
 import { makeUser } from "test/factories/user-management/make-user";
-import request from "supertest";
 
 describe("Create Bulk Of Materials (E2E)", () => {
   let app: INestApplication;
