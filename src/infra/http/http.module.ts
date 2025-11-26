@@ -1,4 +1,8 @@
 import { Module } from "@nestjs/common";
+import { CreateBulkOfCableConnectorsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable-connector/create-bulk-of-cable-connectors";
+import { CreateCableConnectorUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable-connector/create-cable-connector";
+import { EditCableConnectorUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable-connector/edit-cable-connector";
+import { FetchWithFilterCableConnectorUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable-connector/fetch-cable-connectors-with-filter-options";
 import { CreateBulkOfCablesUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/create-bulk-of-cables";
 import { CreateCableUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/create-cable";
 import { EditCableUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/edit-cable";
@@ -26,6 +30,10 @@ import { CacheModule } from "../cache/cache.module";
 import { CryptographyModule } from "../cryptography/cryptography.module";
 import { DatabaseModule } from "../database/database.module";
 import { StorageModule } from "../storage/storage.module";
+import { CreateBulkOfCableConnectorsController } from "./controllers/eletrical-distribution-budgeting/cable-connector/create-bulk-of-cable-connectors.controller";
+import { CreateCableConnectorController } from "./controllers/eletrical-distribution-budgeting/cable-connector/create-cable-connector.controller";
+import { EditCableConnectorController } from "./controllers/eletrical-distribution-budgeting/cable-connector/edit-cable-connector.controller";
+import { FetchCableConnectorsWithFilterOptionsController } from "./controllers/eletrical-distribution-budgeting/cable-connector/fetch-cable-connectors-with-filter-options.controller";
 import { CreateBulkOfCablesController } from "./controllers/eletrical-distribution-budgeting/cable/create-bulk-of-cables.controller";
 import { CreateCableController } from "./controllers/eletrical-distribution-budgeting/cable/create-cable.controller";
 import { EditCableController } from "./controllers/eletrical-distribution-budgeting/cable/edit-cable.controller";
@@ -78,6 +86,10 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     CreateBulkOfUtilityPolesController,
     EditUtilityPoleController,
     FetchUtilityPolesWithFilterOptionsController,
+    CreateCableConnectorController,
+    CreateBulkOfCableConnectorsController,
+    EditCableConnectorController,
+    FetchCableConnectorsWithFilterOptionsController,
   ],
   providers: [
     CreateCompanyUseCase,
@@ -103,6 +115,10 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     CreateBulkOfUtilityPolesUseCase,
     EditUtilityPoleUseCase,
     FetchWithFilterUtilityPoleUseCase,
+    CreateCableConnectorUseCase,
+    CreateBulkOfCableConnectorsUseCase,
+    EditCableConnectorUseCase,
+    FetchWithFilterCableConnectorUseCase,
   ],
 })
 export class HttpModule {}
