@@ -7,7 +7,7 @@ import { TensionLevel } from "src/domain/eletrical-distribution-budgeting/enterp
 import { MaterialsRepository } from "../../repositories/materials-repository";
 import { CreateMaterialUseCaseRequest } from "./create-material";
 
-interface FailedLog {
+export interface FailedLog {
   error: AlreadyRegisteredError | NotAllowedError;
   material: CreateMaterialUseCaseRequest;
 }

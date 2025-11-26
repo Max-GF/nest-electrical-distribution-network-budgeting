@@ -7,6 +7,10 @@ import { CreateBulkOfCablesUseCase } from "src/domain/eletrical-distribution-bud
 import { CreateCableUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/create-cable";
 import { EditCableUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/edit-cable";
 import { FetchCablesWithFilterOptionsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/fetch-cables-with-filter-options";
+import { CreateBulkOfMaterialsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/create-bulk-of-materials";
+import { CreateMaterialUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/create-material";
+import { EditMaterialUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/edit-material";
+import { FetchWithFilterMaterialsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/fetch-materials-with-filter-options";
 import { CreateBulkOfPoleScrewsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/pole-screw/create-bulk-of-pole-screws";
 import { CreatePoleScrewUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/pole-screw/create-pole-screw";
 import { EditPoleScrewUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/pole-screw/edit-pole-screw";
@@ -38,6 +42,10 @@ import { CreateBulkOfCableConnectorsController } from "./controllers/eletrical-d
 import { CreateCableConnectorController } from "./controllers/eletrical-distribution-budgeting/cable-connector/create-cable-connector.controller";
 import { EditCableConnectorController } from "./controllers/eletrical-distribution-budgeting/cable-connector/edit-cable-connector.controller";
 import { FetchCableConnectorsWithFilterOptionsController } from "./controllers/eletrical-distribution-budgeting/cable-connector/fetch-cable-connectors-with-filter-options.controller";
+import { CreateBulkOfMaterialsController } from "./controllers/eletrical-distribution-budgeting/material/create-bulk-of-materials.controller";
+import { CreateMaterialController } from "./controllers/eletrical-distribution-budgeting/material/create-material.controller";
+import { EditMaterialController } from "./controllers/eletrical-distribution-budgeting/material/edit-material.controller";
+import { FetchMaterialsWithFilterOptionsController } from "./controllers/eletrical-distribution-budgeting/material/fetch-materials-with-filter-options.controller";
 import { CreateBulkOfCablesController } from "./controllers/eletrical-distribution-budgeting/cable/create-bulk-of-cables.controller";
 import { CreateCableController } from "./controllers/eletrical-distribution-budgeting/cable/create-cable.controller";
 import { EditCableController } from "./controllers/eletrical-distribution-budgeting/cable/edit-cable.controller";
@@ -102,6 +110,10 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     CreateBulkOfPoleScrewsController,
     EditPoleScrewController,
     FetchPoleScrewsWithFilterOptionsController,
+    CreateMaterialController,
+    CreateBulkOfMaterialsController,
+    EditMaterialController,
+    FetchMaterialsWithFilterOptionsController,
   ],
   providers: [
     CreateCompanyUseCase,
@@ -135,6 +147,10 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     CreateBulkOfPoleScrewsUseCase,
     EditPoleScrewUseCase,
     FetchWithFilterPoleScrewUseCase,
+    CreateMaterialUseCase,
+    CreateBulkOfMaterialsUseCase,
+    EditMaterialUseCase,
+    FetchWithFilterMaterialsUseCase,
   ],
 })
 export class HttpModule {}
