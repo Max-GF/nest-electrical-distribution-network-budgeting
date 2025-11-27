@@ -2,9 +2,9 @@ import { UniqueEntityID } from "src/core/entities/unique-entity-id";
 import { ValueObject } from "src/core/entities/value-object";
 import { Optional } from "src/core/types/optional";
 import {
-  GroupCableConnectorProps,
-  GroupMaterialProps,
-  GroupPoleScrewProps,
+    GroupCableConnectorProps,
+    GroupMaterialProps,
+    GroupPoleScrewProps,
 } from "../group-item";
 import { Material } from "../material";
 
@@ -104,7 +104,33 @@ export class GroupItemWithDetails<
   isPoleScrew(): this is GroupItemWithDetails<GroupPoleScrewWithDetailsProps> {
     return this.props.type === "poleScrew";
   }
+
+  get lengthAdd(): number {
+    if (this.isPoleScrew()) {
+      return this.props.lengthAdd;
+    }
+    throw new Error("This GroupItemWithDetails is not of type 'poleScrew'");
+  }
+
   isCableConnector(): this is GroupItemWithDetails<GroupCableConnectorWithDetailsProps> {
     return this.props.type === "cableConnector";
+  }
+
+  get localCableSectionInMM(): number {
+    if (this.isCableConnector()) {
+      return this.props.localCableSectionInMM;
+    }
+    throw new Error(
+      "This GroupItemWithDetails is not of type 'cableConnector'",
+    );
+  }
+
+  get oneSideConnector(): boolean | undefined {
+    if (this.isCableConnector()) {
+      return this.props.oneSideConnector;
+    }
+    throw new Error(
+      "This GroupItemWithDetails is not of type 'cableConnector'",
+    );
   }
 }

@@ -7,6 +7,10 @@ import { CreateBulkOfCablesUseCase } from "src/domain/eletrical-distribution-bud
 import { CreateCableUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/create-cable";
 import { EditCableUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/edit-cable";
 import { FetchCablesWithFilterOptionsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/fetch-cables-with-filter-options";
+import { CreateBulkOfGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/create-bulk-of-groups";
+import { CreateGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/create-group";
+import { EditGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/edit-group";
+import { FetchGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/fetch-groups-with-filter-options";
 import { CreateBulkOfMaterialsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/create-bulk-of-materials";
 import { CreateMaterialUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/create-material";
 import { EditMaterialUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/edit-material";
@@ -46,6 +50,10 @@ import { CreateBulkOfCablesController } from "./controllers/eletrical-distributi
 import { CreateCableController } from "./controllers/eletrical-distribution-budgeting/cable/create-cable.controller";
 import { EditCableController } from "./controllers/eletrical-distribution-budgeting/cable/edit-cable.controller";
 import { FetchCablesWithFilterOptionsController } from "./controllers/eletrical-distribution-budgeting/cable/fetch-cables-with-filter-options.controller";
+import { CreateBulkOfGroupsController } from "./controllers/eletrical-distribution-budgeting/group/create-bulk-of-groups.controller";
+import { CreateGroupController } from "./controllers/eletrical-distribution-budgeting/group/create-group.controller";
+import { EditGroupController } from "./controllers/eletrical-distribution-budgeting/group/edit-group.controller";
+import { FetchGroupsController } from "./controllers/eletrical-distribution-budgeting/group/fetch-groups.controller";
 import { CreateBulkOfMaterialsController } from "./controllers/eletrical-distribution-budgeting/material/create-bulk-of-materials.controller";
 import { CreateMaterialController } from "./controllers/eletrical-distribution-budgeting/material/create-material.controller";
 import { EditMaterialController } from "./controllers/eletrical-distribution-budgeting/material/edit-material.controller";
@@ -114,6 +122,10 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     CreateBulkOfMaterialsController,
     EditMaterialController,
     FetchMaterialsWithFilterOptionsController,
+    CreateGroupController,
+    CreateBulkOfGroupsController,
+    EditGroupController,
+    FetchGroupsController,
   ],
   providers: [
     CreateCompanyUseCase,
@@ -151,6 +163,10 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     CreateBulkOfMaterialsUseCase,
     EditMaterialUseCase,
     FetchWithFilterMaterialsUseCase,
+    CreateGroupUseCase,
+    CreateBulkOfGroupUseCase,
+    EditGroupUseCase,
+    FetchGroupUseCase,
   ],
 })
 export class HttpModule {}
