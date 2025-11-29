@@ -15,6 +15,9 @@ import { CreateBulkOfMaterialsUseCase } from "src/domain/eletrical-distribution-
 import { CreateMaterialUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/create-material";
 import { EditMaterialUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/edit-material";
 import { FetchWithFilterMaterialsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/fetch-materials-with-filter-options";
+import { EditPointUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/point/edit-point";
+import { GetProjectPointUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/point/get-points-by-project-id";
+import { ValidateManyPointsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/point/validate-many-points";
 import { CreateBulkOfPoleScrewsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/pole-screw/create-bulk-of-pole-screws";
 import { CreatePoleScrewUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/pole-screw/create-pole-screw";
 import { EditPoleScrewUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/pole-screw/edit-pole-screw";
@@ -58,6 +61,9 @@ import { CreateBulkOfMaterialsController } from "./controllers/eletrical-distrib
 import { CreateMaterialController } from "./controllers/eletrical-distribution-budgeting/material/create-material.controller";
 import { EditMaterialController } from "./controllers/eletrical-distribution-budgeting/material/edit-material.controller";
 import { FetchMaterialsWithFilterOptionsController } from "./controllers/eletrical-distribution-budgeting/material/fetch-materials-with-filter-options.controller";
+import { EditPointController } from "./controllers/eletrical-distribution-budgeting/point/edit-point.controller";
+import { GetPointsByProjectIdController } from "./controllers/eletrical-distribution-budgeting/point/get-points-by-project-id.controller";
+import { ValidateManyPointsController } from "./controllers/eletrical-distribution-budgeting/point/validate-many-points.controller";
 import { CreateBulkOfPoleScrewsController } from "./controllers/eletrical-distribution-budgeting/pole-screw/create-bulk-of-pole-screws.controller";
 import { CreatePoleScrewController } from "./controllers/eletrical-distribution-budgeting/pole-screw/create-pole-screw.controller";
 import { EditPoleScrewController } from "./controllers/eletrical-distribution-budgeting/pole-screw/edit-pole-screw.controller";
@@ -126,6 +132,9 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     CreateBulkOfGroupsController,
     EditGroupController,
     FetchGroupsController,
+    EditPointController,
+    GetPointsByProjectIdController,
+    ValidateManyPointsController,
   ],
   providers: [
     CreateCompanyUseCase,
@@ -167,6 +176,9 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     CreateBulkOfGroupUseCase,
     EditGroupUseCase,
     FetchGroupUseCase,
+    EditPointUseCase,
+    GetProjectPointUseCase,
+    ValidateManyPointsUseCase,
   ],
 })
 export class HttpModule {}
