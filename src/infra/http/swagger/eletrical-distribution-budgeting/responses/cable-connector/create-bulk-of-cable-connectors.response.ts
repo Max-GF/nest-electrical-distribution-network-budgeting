@@ -54,7 +54,8 @@ export function CreateBulkOfCableConnectorsResponse() {
       description: "Invalid parameters (negative length)",
       schema: {
         example: {
-          message: "Cable Connector entrance and exit section lengths must be greater than or equal to zero.",
+          message:
+            "Cable Connector entrance and exit section lengths must be greater than or equal to zero.",
           statusCode: 422,
           error: "Unprocessable Entity",
         },

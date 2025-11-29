@@ -1,8 +1,8 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from "@nestjs/swagger";
 import {
-    GroupCableConnectorItemResponse,
-    GroupMaterialItemResponse,
-    GroupPoleScrewItemResponse,
+  GroupCableConnectorItemResponse,
+  GroupMaterialItemResponse,
+  GroupPoleScrewItemResponse,
 } from "./group-item.response";
 import { GroupResponse } from "./group.response";
 
