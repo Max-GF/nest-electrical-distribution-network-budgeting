@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { CalculateBudgetUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/budget/calculate-budget";
 import { CreateBulkOfCableConnectorsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable-connector/create-bulk-of-cable-connectors";
 import { CreateCableConnectorUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable-connector/create-cable-connector";
 import { EditCableConnectorUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable-connector/edit-cable-connector";
@@ -45,6 +46,7 @@ import { CacheModule } from "../cache/cache.module";
 import { CryptographyModule } from "../cryptography/cryptography.module";
 import { DatabaseModule } from "../database/database.module";
 import { StorageModule } from "../storage/storage.module";
+import { CalculateBudgetController } from "./controllers/eletrical-distribution-budgeting/budget/calculate-budget.controller";
 import { CreateBulkOfCableConnectorsController } from "./controllers/eletrical-distribution-budgeting/cable-connector/create-bulk-of-cable-connectors.controller";
 import { CreateCableConnectorController } from "./controllers/eletrical-distribution-budgeting/cable-connector/create-cable-connector.controller";
 import { EditCableConnectorController } from "./controllers/eletrical-distribution-budgeting/cable-connector/edit-cable-connector.controller";
@@ -135,6 +137,7 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     EditPointController,
     GetPointsByProjectIdController,
     ValidateManyPointsController,
+    CalculateBudgetController,
   ],
   providers: [
     CreateCompanyUseCase,
@@ -179,6 +182,7 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     EditPointUseCase,
     GetProjectPointUseCase,
     ValidateManyPointsUseCase,
+    CalculateBudgetUseCase,
   ],
 })
 export class HttpModule {}
