@@ -1,16 +1,16 @@
 import {
-    BadRequestException,
-    Body,
-    ConflictException,
-    Controller,
-    Post,
-    UseGuards,
+  BadRequestException,
+  Body,
+  ConflictException,
+  Controller,
+  Post,
+  UseGuards,
 } from "@nestjs/common";
 import {
-    ApiBearerAuth,
-    ApiOperation,
-    ApiResponse,
-    ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
 } from "@nestjs/swagger";
 import { AlreadyRegisteredError } from "src/core/errors/generics/already-registered-error";
 import { CreateGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/create-group";

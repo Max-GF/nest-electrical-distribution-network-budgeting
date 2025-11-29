@@ -1,8 +1,8 @@
 import {
-    Controller,
-    Get,
-    InternalServerErrorException,
-    Query,
+  Controller,
+  Get,
+  InternalServerErrorException,
+  Query,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { FetchWithFilterCableConnectorUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable-connector/fetch-cable-connectors-with-filter-options";

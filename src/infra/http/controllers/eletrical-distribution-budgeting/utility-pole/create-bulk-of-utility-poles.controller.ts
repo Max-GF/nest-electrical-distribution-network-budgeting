@@ -1,5 +1,6 @@
 import { Body, Controller, HttpStatus, Post, Res } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
+import { Response } from "express";
 import { CreateBulkOfUtilityPolesUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/utility-pole/create-bulk-of-utility-poles";
 import { ZodValidationPipe } from "src/infra/http/pipes/zod-validation-pipe";
 import { UtilityPolePresenter } from "src/infra/http/presenters/eletrical-distribution-budgeting/utility-pole-presenter";
@@ -36,7 +37,7 @@ export class CreateBulkOfUtilityPolesController {
   async handle(
     @Body(new ZodValidationPipe(createBulkOfUtilityPolesBodySchema))
     body: CreateBulkOfUtilityPolesDto,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<{
     message: string;
     created: ReturnType<typeof UtilityPolePresenter.toHttp>[];
@@ -50,14 +51,14 @@ export class CreateBulkOfUtilityPolesController {
     }
 
     const { created, failed } = result.value;
-    return res
-      .status(
-        failed.length > 0 ? HttpStatus.PARTIAL_CONTENT : HttpStatus.CREATED,
-      )
-      .json({
-        message: `Utility poles processed ${failed.length > 0 ? "partially " : ""}successfully`,
-        created: created.map(UtilityPolePresenter.toHttp),
-        failed,
-      });
+    const responseCodeStatus: number =
+      failed.length > 0 ? HttpStatus.PARTIAL_CONTENT : HttpStatus.CREATED;
+
+    res.status(responseCodeStatus);
+    return {
+      message: `Utility poles processed ${failed.length > 0 ? "partially " : ""}successfully`,
+      created: created.map(UtilityPolePresenter.toHttp),
+      failed,
+    };
   }
 }

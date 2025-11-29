@@ -1,8 +1,8 @@
 import {
-    Controller,
-    Get,
-    InternalServerErrorException,
-    Query,
+  Controller,
+  Get,
+  InternalServerErrorException,
+  Query,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { FetchWithFilterPoleScrewUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/pole-screw/fetch-pole-screws-with-filter-options";

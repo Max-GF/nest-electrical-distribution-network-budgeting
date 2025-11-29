@@ -1,10 +1,10 @@
 import {
-    BadRequestException,
-    Body,
-    Controller,
-    HttpCode,
-    Param,
-    Put,
+  BadRequestException,
+  Body,
+  Controller,
+  HttpCode,
+  Param,
+  Put,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { EditMaterialUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/edit-material";

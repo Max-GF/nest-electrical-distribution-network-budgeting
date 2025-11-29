@@ -1,17 +1,17 @@
 import {
-    BadRequestException,
-    Body,
-    Controller,
-    NotFoundException,
-    Param,
-    Put,
-    UseGuards,
+  BadRequestException,
+  Body,
+  Controller,
+  NotFoundException,
+  Param,
+  Put,
+  UseGuards,
 } from "@nestjs/common";
 import {
-    ApiBearerAuth,
-    ApiOperation,
-    ApiResponse,
-    ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
 } from "@nestjs/swagger";
 import { ResourceNotFoundError } from "src/core/errors/generics/resource-not-found-error";
 import { EditGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/edit-group";

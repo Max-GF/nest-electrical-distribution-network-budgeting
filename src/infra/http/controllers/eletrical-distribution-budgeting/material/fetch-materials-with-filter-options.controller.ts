@@ -1,9 +1,9 @@
 import {
-    BadRequestException,
-    Controller,
-    Get,
-    Query,
-    UsePipes,
+  BadRequestException,
+  Controller,
+  Get,
+  Query,
+  UsePipes,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { FetchWithFilterMaterialsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/fetch-materials-with-filter-options";

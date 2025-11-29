@@ -1,8 +1,4 @@
-import {
-    Body,
-    Controller,
-    Post,
-} from "@nestjs/common";
+import { Body, Controller, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { CreateBulkOfPoleScrewsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/pole-screw/create-bulk-of-pole-screws";
 import { ZodValidationPipe } from "src/infra/http/pipes/zod-validation-pipe";
@@ -25,9 +21,7 @@ const createBulkOfPoleScrewsBodySchema = z.object({
 @ApiTags("Pole Screw")
 @Controller("/pole-screws/bulk")
 export class CreateBulkOfPoleScrewsController {
-  constructor(
-    private createBulkOfPoleScrews: CreateBulkOfPoleScrewsUseCase,
-  ) {}
+  constructor(private createBulkOfPoleScrews: CreateBulkOfPoleScrewsUseCase) {}
 
   @Post()
   @CreateBulkOfPoleScrewsResponse()

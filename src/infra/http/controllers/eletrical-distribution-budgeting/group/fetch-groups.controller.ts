@@ -1,15 +1,15 @@
 import {
-    BadRequestException,
-    Controller,
-    Get,
-    Query,
-    UseGuards,
+  BadRequestException,
+  Controller,
+  Get,
+  Query,
+  UseGuards,
 } from "@nestjs/common";
 import {
-    ApiBearerAuth,
-    ApiOperation,
-    ApiResponse,
-    ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
 } from "@nestjs/swagger";
 import { FetchGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/fetch-groups-with-filter-options";
 import { JwtAuthGuard } from "src/infra/auth/jwt-auth.guard";

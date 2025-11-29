@@ -2,9 +2,9 @@ import { UniqueEntityID } from "src/core/entities/unique-entity-id";
 import { ValueObject } from "src/core/entities/value-object";
 import { Optional } from "src/core/types/optional";
 import {
-    GroupCableConnectorProps,
-    GroupMaterialProps,
-    GroupPoleScrewProps,
+  GroupCableConnectorProps,
+  GroupMaterialProps,
+  GroupPoleScrewProps,
 } from "../group-item";
 import { Material } from "../material";
 

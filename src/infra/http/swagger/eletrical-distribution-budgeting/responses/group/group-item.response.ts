@@ -32,9 +32,6 @@ export class GroupItemBaseResponse {
 
   @ApiProperty({ example: "Item description", required: false })
   description?: string;
-
-  @ApiProperty({ enum: ["material", "poleScrew", "cableConnector"] })
-  type!: "material" | "poleScrew" | "cableConnector";
 }
 
 export class GroupMaterialItemResponse extends GroupItemBaseResponse {

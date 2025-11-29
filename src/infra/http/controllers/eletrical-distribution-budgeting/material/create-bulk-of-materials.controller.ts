@@ -1,9 +1,9 @@
 import {
-    BadRequestException,
-    Body,
-    Controller,
-    Post,
-    UsePipes,
+  BadRequestException,
+  Body,
+  Controller,
+  Post,
+  UsePipes,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { CreateBulkOfMaterialsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/material/create-bulk-of-materials";
