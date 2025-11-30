@@ -23,6 +23,10 @@ import { CreateBulkOfPoleScrewsUseCase } from "src/domain/eletrical-distribution
 import { CreatePoleScrewUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/pole-screw/create-pole-screw";
 import { EditPoleScrewUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/pole-screw/edit-pole-screw";
 import { FetchWithFilterPoleScrewUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/pole-screw/fetch-pole-screws-with-filter-options";
+import { BuildProjectBudgetUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/project/build-project-budget";
+import { CreateProjectUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/project/create-project";
+import { EditProjectUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/project/edit-project";
+import { FetchProjectsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/project/fetch-projects";
 import { CreateBulkOfUtilityPolesUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/utility-pole/create-bulk-of-utility-poles";
 import { CreateUtilityPoleUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/utility-pole/create-utility-pole";
 import { EditUtilityPoleUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/utility-pole/edit-utility-pole";
@@ -70,6 +74,10 @@ import { CreateBulkOfPoleScrewsController } from "./controllers/eletrical-distri
 import { CreatePoleScrewController } from "./controllers/eletrical-distribution-budgeting/pole-screw/create-pole-screw.controller";
 import { EditPoleScrewController } from "./controllers/eletrical-distribution-budgeting/pole-screw/edit-pole-screw.controller";
 import { FetchPoleScrewsWithFilterOptionsController } from "./controllers/eletrical-distribution-budgeting/pole-screw/fetch-pole-screws-with-filter-options.controller";
+import { BuildProjectBudgetController } from "./controllers/eletrical-distribution-budgeting/project/build-project-budget.controller";
+import { CreateProjectController } from "./controllers/eletrical-distribution-budgeting/project/create-project.controller";
+import { EditProjectController } from "./controllers/eletrical-distribution-budgeting/project/edit-project.controller";
+import { FetchProjectsController } from "./controllers/eletrical-distribution-budgeting/project/fetch-projects.controller";
 import { CreateBulkOfUtilityPolesController } from "./controllers/eletrical-distribution-budgeting/utility-pole/create-bulk-of-utility-poles.controller";
 import { CreateUtilityPoleController } from "./controllers/eletrical-distribution-budgeting/utility-pole/create-utility-pole.controller";
 import { EditUtilityPoleController } from "./controllers/eletrical-distribution-budgeting/utility-pole/edit-utility-pole.controller";
@@ -138,6 +146,10 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     GetPointsByProjectIdController,
     ValidateManyPointsController,
     CalculateBudgetController,
+    CreateProjectController,
+    EditProjectController,
+    FetchProjectsController,
+    BuildProjectBudgetController,
   ],
   providers: [
     CreateCompanyUseCase,
@@ -183,6 +195,10 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     GetProjectPointUseCase,
     ValidateManyPointsUseCase,
     CalculateBudgetUseCase,
+    CreateProjectUseCase,
+    EditProjectUseCase,
+    FetchProjectsUseCase,
+    BuildProjectBudgetUseCase,
   ],
 })
 export class HttpModule {}

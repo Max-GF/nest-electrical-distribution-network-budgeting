@@ -30,9 +30,10 @@ export class PrismaProjectsBudgetRepository
       // Update points
       for (const point of pointsToSave) {
         const pointData = PrismaPointMapper.toPrisma(point);
-        await tx.point.update({
+        await tx.point.upsert({
           where: { id: pointData.id },
-          data: pointData,
+          create: pointData,
+          update: pointData,
         });
       }
 
