@@ -10,6 +10,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { AlreadyRegisteredError } from "src/core/errors/errors-user-management/already-registered-error";
 import { NotAllowedError } from "src/core/errors/errors-user-management/not-allowed-error";
 import { CreateCompanyUseCase } from "src/domain/user-management/application/use-cases/company/create-company";
+import { Public } from "src/infra/auth/public";
 import { ZodValidationPipe } from "src/infra/http/pipes/zod-validation-pipe";
 import { z } from "zod";
 import { CompanyPresenter } from "../../../presenters/user-management/company-presenter";
@@ -23,6 +24,7 @@ const createCompanyBodySchema = z.object({
 
 @ApiTags("Company")
 @Controller("/companies")
+@Public()
 export class CreateCompanyController {
   constructor(private createCompany: CreateCompanyUseCase) {}
   @Post()

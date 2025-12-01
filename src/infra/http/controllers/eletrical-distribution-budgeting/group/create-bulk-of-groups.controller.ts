@@ -5,6 +5,7 @@ import {
   Controller,
   Post,
   UseGuards,
+  UsePipes,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -15,9 +16,33 @@ import {
 import { AlreadyRegisteredError } from "src/core/errors/generics/already-registered-error";
 import { CreateBulkOfGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/create-bulk-of-groups";
 import { JwtAuthGuard } from "src/infra/auth/jwt-auth.guard";
+import { z } from "zod";
+import { ZodValidationPipe } from "../../../pipes/zod-validation-pipe";
 import { GroupPresenter } from "../../../presenters/eletrical-distribution-budgeting/group-presenter";
-import { CreateBulkOfGroupsDto } from "../../../swagger/eletrical-distribution-budgeting/dto/group/create-bulk-of-groups.dto";
 import { GroupResponse } from "../../../swagger/eletrical-distribution-budgeting/responses/group/group.response";
+
+const createGroupItemSchema = z.object({
+  quantity: z.number(),
+  addByPhase: z.number().optional(),
+  description: z.string().optional(),
+  type: z.enum(["material", "poleScrew", "cableConnector"]),
+  materialId: z.string().uuid().optional(),
+  lengthAdd: z.number().optional(),
+  localCableSectionInMM: z.number().optional(),
+});
+
+const createGroupSchema = z.object({
+  name: z.string().min(1),
+  tension: z.string().min(1),
+  description: z.string().min(1),
+  items: z.array(createGroupItemSchema),
+});
+
+const createBulkOfGroupsSchema = z.object({
+  groups: z.array(createGroupSchema),
+});
+
+type CreateBulkOfGroupsSchema = z.infer<typeof createBulkOfGroupsSchema>;
 
 @ApiTags("Groups")
 @ApiBearerAuth()
@@ -35,7 +60,8 @@ export class CreateBulkOfGroupsController {
   })
   @ApiResponse({ status: 400, description: "Bad Request" })
   @ApiResponse({ status: 409, description: "Conflict" })
-  async handle(@Body() body: CreateBulkOfGroupsDto) {
+  @UsePipes(new ZodValidationPipe(createBulkOfGroupsSchema))
+  async handle(@Body() body: CreateBulkOfGroupsSchema) {
     const { groups } = body;
 
     const result = await this.createBulkOfGroups.execute({

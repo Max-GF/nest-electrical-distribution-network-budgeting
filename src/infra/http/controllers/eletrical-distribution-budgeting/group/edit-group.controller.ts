@@ -16,9 +16,30 @@ import {
 import { ResourceNotFoundError } from "src/core/errors/generics/resource-not-found-error";
 import { EditGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/edit-group";
 import { JwtAuthGuard } from "src/infra/auth/jwt-auth.guard";
+import { z } from "zod";
+import { ZodValidationPipe } from "../../../pipes/zod-validation-pipe";
 import { GroupPresenter } from "../../../presenters/eletrical-distribution-budgeting/group-presenter";
-import { EditGroupDto } from "../../../swagger/eletrical-distribution-budgeting/dto/group/edit-group.dto";
 import { CreateGroupResponse } from "../../../swagger/eletrical-distribution-budgeting/responses/group/create-group.response";
+
+const editGroupItemSchema = z.object({
+  groupItemId: z.string().uuid().optional(),
+  quantity: z.number().optional(),
+  addByPhase: z.number().optional(),
+  description: z.string().optional(),
+  type: z.enum(["material", "poleScrew", "cableConnector"]).optional(),
+  materialId: z.string().uuid().optional(),
+  lengthAdd: z.number().optional(),
+  localCableSectionInMM: z.number().optional(),
+});
+
+const editGroupSchema = z.object({
+  name: z.string().optional(),
+  tension: z.string().optional(),
+  description: z.string().optional(),
+  items: z.array(editGroupItemSchema).optional(),
+});
+
+type EditGroupSchema = z.infer<typeof editGroupSchema>;
 
 @ApiTags("Groups")
 @ApiBearerAuth()
@@ -36,7 +57,10 @@ export class EditGroupController {
   })
   @ApiResponse({ status: 400, description: "Bad Request" })
   @ApiResponse({ status: 404, description: "Not Found" })
-  async handle(@Param("id") id: string, @Body() body: EditGroupDto) {
+  async handle(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(editGroupSchema)) body: EditGroupSchema,
+  ) {
     const { name, description, tension, items } = body;
 
     const result = await this.editGroup.execute({

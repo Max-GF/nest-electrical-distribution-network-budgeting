@@ -1,9 +1,9 @@
 import {
-    BadRequestException,
-    Controller,
-    Get,
-    Query,
-    UnprocessableEntityException,
+  BadRequestException,
+  Controller,
+  Get,
+  Query,
+  UnprocessableEntityException,
 } from "@nestjs/common";
 import { ApiQuery, ApiTags } from "@nestjs/swagger";
 import { NotAllowedError } from "src/core/errors/errors-user-management/not-allowed-error";

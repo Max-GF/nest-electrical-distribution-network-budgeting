@@ -22,7 +22,6 @@ import { EditBaseResponse } from "src/infra/http/swagger/user-management/respons
 import { z } from "zod";
 
 const editBaseBodySchema = z.object({
-  baseId: z.string().uuid(),
   name: z.string().max(100).toUpperCase(),
 });
 

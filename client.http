@@ -46,7 +46,7 @@ Authorization: Bearer {{authToken}}
  
 {
     "name": "Test_Base_4",
-    "companyId": "351d141d-2465-4ba3-a766-c86ae84c8a2b"
+    "companyId": "7b5e3741-1b40-4744-b009-3ea7ec8cc66b"
 }
 ###
 
@@ -69,8 +69,8 @@ Authorization: Bearer {{authToken}}
     "email": "max@test.com.br",
     "password": "123456",
     "role" : "ADMIN",
-    "companyId": "351d141d-2465-4ba3-a766-c86ae84c8a2b",
-    "baseId" : "a24d05f0-1591-4310-b679-aadefc50375e"
+    "companyId": "7b5e3741-1b40-4744-b009-3ea7ec8cc66b",
+    "baseId" : "1a7fc300-aa3b-4933-96a6-e73fb52ad6e6"
 }
 ###
 

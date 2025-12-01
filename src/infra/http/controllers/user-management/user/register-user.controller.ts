@@ -12,6 +12,7 @@ import { AlreadyRegisteredError } from "src/core/errors/errors-user-management/a
 import { NotAllowedError } from "src/core/errors/errors-user-management/not-allowed-error";
 import { ResourceNotFoundError } from "src/core/errors/errors-user-management/resource-not-found-error";
 import { RegisterUserUseCase } from "src/domain/user-management/application/use-cases/user/register-user";
+import { Public } from "src/infra/auth/public";
 import { ZodValidationPipe } from "src/infra/http/pipes/zod-validation-pipe";
 import { z } from "zod";
 import { UserPresenter } from "../../../presenters/user-management/user-presenter";
@@ -33,6 +34,7 @@ const registerUserBodySchema = z.object({
 
 @ApiTags("User Management")
 @Controller("/accounts")
+@Public()
 export class RegisterUserController {
   constructor(private registerUser: RegisterUserUseCase) {}
   @Post()

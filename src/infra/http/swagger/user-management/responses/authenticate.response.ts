@@ -17,6 +17,27 @@ export const AuthenticateUserResponse = () => {
             type: "string",
             example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
           },
+          userProps: {
+            type: "object",
+            properties: {
+              sub: {
+                type: "string",
+                example: "user-uuid-v4",
+              },
+              role: {
+                type: "string",
+                example: "admin",
+              },
+              companyId: {
+                type: "string",
+                example: "company-uuid-v4",
+              },
+              baseId: {
+                type: "string",
+                example: "base-uuid-v4",
+              },
+            },
+          },
         },
       },
     }),

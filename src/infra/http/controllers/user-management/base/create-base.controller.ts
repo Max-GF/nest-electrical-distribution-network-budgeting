@@ -10,6 +10,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { AlreadyRegisteredError } from "src/core/errors/errors-user-management/already-registered-error";
 import { ResourceNotFoundError } from "src/core/errors/errors-user-management/resource-not-found-error";
 import { CreateBaseUseCase } from "src/domain/user-management/application/use-cases/base/create-base";
+import { Public } from "src/infra/auth/public";
 import { ZodValidationPipe } from "src/infra/http/pipes/zod-validation-pipe";
 import { z } from "zod";
 import { BasePresenter } from "../../../presenters/user-management/base-presenter";
@@ -23,6 +24,7 @@ const createBaseBodySchema = z.object({
 
 @ApiTags("Base")
 @Controller("/bases")
+@Public()
 export class CreateBaseController {
   constructor(private createBase: CreateBaseUseCase) {}
   @Post()

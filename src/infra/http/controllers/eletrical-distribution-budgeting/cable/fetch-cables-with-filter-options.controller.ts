@@ -27,8 +27,8 @@ const fetchCablesQuerySchema = z.object({
   tension: z.string().optional(),
   maxSectionAreaInMM: z.coerce.number().optional(),
   minSectionAreaInMM: z.coerce.number().optional(),
-  page: z.coerce.number().optional().default(1),
-  pageSize: z.coerce.number().optional().default(20),
+  page: z.coerce.number().min(1).optional().default(1),
+  pageSize: z.coerce.number().min(1).optional().default(20),
 });
 
 @ApiTags("Cable")

@@ -2,32 +2,37 @@ import { ApiProperty } from "@nestjs/swagger";
 
 export class ProjectMaterialGroupSpecsDto {
   @ApiProperty()
-  groupId: string;
+  groupId!: string;
 
   @ApiProperty()
-  utilityPoleLevel: number;
+  utilityPoleLevel!: number;
 
   @ApiProperty({ enum: ["LOW", "MEDIUM"] })
-  tensionLevel: "LOW" | "MEDIUM";
+  tensionLevel!: "LOW" | "MEDIUM";
 }
 
 export class ProjectMaterialDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty()
-  projectId: string;
+  projectId!: string;
 
   @ApiProperty()
-  itemId: string;
+  itemId!: string;
 
   @ApiProperty({
     enum: ["material", "poleScrew", "cableConnector", "utilityPole", "cable"],
   })
-  itemType: "material" | "poleScrew" | "cableConnector" | "utilityPole" | "cable";
+  itemType!:
+    | "material"
+    | "poleScrew"
+    | "cableConnector"
+    | "utilityPole"
+    | "cable";
 
   @ApiProperty()
-  quantity: number;
+  quantity!: number;
 
   @ApiProperty({ required: false })
   pointId?: string;

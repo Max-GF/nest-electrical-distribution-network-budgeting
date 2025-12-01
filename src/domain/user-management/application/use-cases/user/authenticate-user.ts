@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { Either, left, right } from "src/core/either";
 import { NotAllowedError } from "src/core/errors/errors-user-management/not-allowed-error";
 import { WrongCredentialsError } from "src/core/errors/errors-user-management/wrong-credentials-error";
+import { UserPayload } from "src/infra/auth/jwt-strategy";
 import { CacheRepository } from "src/infra/cache/cache-repository";
 import { Cpf } from "../../../enterprise/entities/value-objects/cpf";
 import { Encrypter } from "../../cryptography/encrypter";
@@ -20,6 +21,7 @@ type AuthenticateUserUseCaseResponse = Either<
   {
     accessToken: string;
     refreshToken: string;
+    userProps: Omit<UserPayload, "type">;
   }
 >;
 
@@ -95,9 +97,16 @@ export class AuthenticateUserUseCase {
       1000 * 60 * 60 * 5, // 5 hours on cache
     );
 
+    const userProps = {
+      baseId: user.baseId.toString(),
+      companyId: user.companyId.toString(),
+      role: user.role.value,
+      sub: user.id.toString(),
+    };
     return right({
       accessToken,
       refreshToken,
+      userProps,
     });
   }
 }

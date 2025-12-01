@@ -8,6 +8,8 @@ async function bootstrap() {
     logger: ["log", "debug", "error", "fatal", "verbose", "warn"], // For production, set to false
   });
 
+  app.enableCors();
+
   const config = new DocumentBuilder()
     .setTitle("Electrical Distribution Network Budgeting NestJS Start Project")
     .setDescription("Some base stuffs to start a NestJS project")
@@ -18,7 +20,7 @@ async function bootstrap() {
 
   const configService = app.get(EnvService);
   const port = configService.get("PORT");
-  await app.listen(port);
+  await app.listen(port, "0.0.0.0");
   console.log(`Server is running on http://localhost:${port}`);
 }
 bootstrap();

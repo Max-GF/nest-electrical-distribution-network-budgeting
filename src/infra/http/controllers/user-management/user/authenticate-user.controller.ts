@@ -10,6 +10,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { NotAllowedError } from "src/core/errors/errors-user-management/not-allowed-error";
 import { WrongCredentialsError } from "src/core/errors/errors-user-management/wrong-credentials-error";
 import { AuthenticateUserUseCase } from "src/domain/user-management/application/use-cases/user/authenticate-user";
+import { UserPayload } from "src/infra/auth/jwt-strategy";
 import { Public } from "src/infra/auth/public";
 import { ZodValidationPipe } from "src/infra/http/pipes/zod-validation-pipe";
 import { z } from "zod";
@@ -32,7 +33,11 @@ export class AuthenticateUserController {
   async handle(
     @Body(new ZodValidationPipe(authenticateUserBodySchema))
     body: AuthenticateUserDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    userProps: Omit<UserPayload, "type">;
+  }> {
     const { email, cpf, password } = body;
     const result = await this.authenticateUser.execute({
       email: email,
@@ -51,10 +56,11 @@ export class AuthenticateUserController {
           throw new InternalServerErrorException(error.message);
       }
     }
-    const { accessToken, refreshToken } = result.value;
+    const { accessToken, refreshToken, userProps } = result.value;
     return {
       accessToken,
       refreshToken,
+      userProps,
     };
   }
 }

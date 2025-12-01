@@ -4,6 +4,7 @@ import {
   Get,
   Query,
   UseGuards,
+  UsePipes,
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
@@ -13,9 +14,20 @@ import {
 } from "@nestjs/swagger";
 import { FetchGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/fetch-groups-with-filter-options";
 import { JwtAuthGuard } from "src/infra/auth/jwt-auth.guard";
+import { z } from "zod";
+import { ZodValidationPipe } from "../../../pipes/zod-validation-pipe";
 import { GroupPresenter } from "../../../presenters/eletrical-distribution-budgeting/group-presenter";
-import { FetchGroupsWithFilterOptionsDto } from "../../../swagger/eletrical-distribution-budgeting/dto/group/fetch-groups-with-filter-options.dto";
 import { FetchGroupsResponse } from "../../../swagger/eletrical-distribution-budgeting/responses/group/fetch-groups.response";
+
+const fetchGroupsSchema = z.object({
+  name: z.string().optional(),
+  tension: z.string().optional(),
+  description: z.string().optional(),
+  page: z.coerce.number().optional(),
+  pageSize: z.coerce.number().optional(),
+});
+
+type FetchGroupsSchema = z.infer<typeof fetchGroupsSchema>;
 
 @ApiTags("Groups")
 @ApiBearerAuth()
@@ -32,7 +44,8 @@ export class FetchGroupsController {
     type: FetchGroupsResponse,
   })
   @ApiResponse({ status: 400, description: "Bad Request" })
-  async handle(@Query() query: FetchGroupsWithFilterOptionsDto) {
+  @UsePipes(new ZodValidationPipe(fetchGroupsSchema))
+  async handle(@Query() query: FetchGroupsSchema) {
     const { name, description, tension, page, pageSize } = query;
 
     const result = await this.fetchGroups.execute({
