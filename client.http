@@ -6,7 +6,7 @@ POST {{baseURL}}/authenticate
 Content-Type: application/json
 
 {
-  "email": "max@test.com.br",
+  "email": "MAX@TEST.COM.BR",
   "password": "123456"
 }
 ###
@@ -15,7 +15,7 @@ POST {{baseURL}}/authenticate
 Content-Type: application/json
 
 {
-  "email": "COMMON_USER@test.com.br",
+  "email": "max@test.com.br",
   "password": "123456"
 }
 ###
@@ -79,6 +79,18 @@ GET {{baseURL}}/accounts
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
+
+###
+###
+
+# @name edit_account
+PUT {{baseURL}}/accounts/eb8ae346-0177-45b4-8db8-1d3b8578d6c4
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+{
+    "name": "Max Gambarini Filho",
+    "email": "max@test.com.br"
+}
 
 ###
 

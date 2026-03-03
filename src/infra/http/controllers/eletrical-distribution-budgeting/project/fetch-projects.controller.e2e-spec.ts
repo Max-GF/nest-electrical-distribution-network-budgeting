@@ -3,6 +3,7 @@ import { JwtService } from "@nestjs/jwt";
 import { Test } from "@nestjs/testing";
 import { AppModule } from "src/infra/app.module";
 import { DatabaseModule } from "src/infra/database/database.module";
+import { PrismaProjectMapper } from "src/infra/database/prisma/mappers/eletrical-distribution-budgeting/prisma-project-mapper";
 import { PrismaService } from "src/infra/database/prisma/prisma.service";
 import request from "supertest";
 import { makeProject } from "test/factories/eletrical-distribution-budgeting/make-project";
@@ -65,20 +66,8 @@ describe("Fetch Projects (E2E)", () => {
 
     await prisma.project.createMany({
       data: [
-        {
-          id: project1.id.toString(),
-          name: project1.name,
-          description: project1.description,
-          budgetAlreadyCalculated: project1.budgetAlreadyCalculated,
-          lastBudgetCalculatedAt: project1.lastBudgetCalculatedAt,
-        },
-        {
-          id: project2.id.toString(),
-          name: project2.name,
-          description: project2.description,
-          budgetAlreadyCalculated: project2.budgetAlreadyCalculated,
-          lastBudgetCalculatedAt: project2.lastBudgetCalculatedAt,
-        },
+        PrismaProjectMapper.toPrisma(project1),
+        PrismaProjectMapper.toPrisma(project2),
       ],
     });
 

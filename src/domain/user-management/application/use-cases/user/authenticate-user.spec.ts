@@ -59,6 +59,12 @@ describe("Authenticate Student", () => {
     expect(result.value).toEqual({
       accessToken: expect.any(String),
       refreshToken: expect.any(String),
+      userProps: expect.objectContaining({
+        baseId: expect.any(String),
+        companyId: expect.any(String),
+        role: expect.stringMatching(/ADMIN|COMMON/),
+        sub: expect.any(String),
+      }),
     });
     if (result.isRight()) {
       const refreshTokenAsJson = JSON.parse(result.value.refreshToken);
@@ -85,6 +91,12 @@ describe("Authenticate Student", () => {
     expect(result.value).toEqual({
       accessToken: expect.any(String),
       refreshToken: expect.any(String),
+      userProps: expect.objectContaining({
+        baseId: expect.any(String),
+        companyId: expect.any(String),
+        role: expect.stringMatching(/ADMIN|COMMON/),
+        sub: expect.any(String),
+      }),
     });
     if (result.isRight()) {
       const refreshTokenAsJson = JSON.parse(result.value.refreshToken);

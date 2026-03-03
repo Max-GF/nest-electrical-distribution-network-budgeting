@@ -24,7 +24,7 @@ import { z } from "zod";
 
 const editUserBodySchema = z.object({
   name: z.string().max(100).toUpperCase().optional(),
-  email: z.string().email().toUpperCase().optional(),
+  email: z.string().email().optional(),
   password: z.string().min(6).max(100).optional(),
 
   role: z.string().toUpperCase().optional(),

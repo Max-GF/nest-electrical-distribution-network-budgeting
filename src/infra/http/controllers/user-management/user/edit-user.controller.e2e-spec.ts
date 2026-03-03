@@ -74,7 +74,7 @@ describe("Edit User (E2E)", () => {
         message: "User edited successfully",
         user: expect.objectContaining({
           name: "NEW USER NAME",
-          email: "NEWUSEREMAIL@EMAIL.COM",
+          email: "newuseremail@email.com",
           isActive: false,
           role: "ADMIN",
         }),

@@ -92,14 +92,23 @@ export class UtilityPole extends Entity<UtilityPoleProps> {
       lowVoltageSectionLengthAddBylevelInMM;
   }
 
-  calculateSectionLengthInMM(level: number, tension: "MEDIUM" | "LOW"): number {
+  calculateSectionLengthInMM(
+    level: number,
+    tension: "MEDIUM" | "LOW",
+    strongSide?: boolean,
+  ): number {
+    const strongSideMultiplier = strongSide
+      ? this.strongSideSectionMultiplier
+      : 1;
     if (tension === "MEDIUM") {
       if (level < 1 || level > this.mediumVoltageLevelsCount) {
         throw new Error("Invalid medium voltage level");
       }
       return (
         this.props.mediumVoltageStartSectionLengthInMM +
-        this.props.mediumVoltageSectionLengthAddBylevelInMM * (level - 1)
+        this.props.mediumVoltageSectionLengthAddBylevelInMM *
+          (level - 1) *
+          strongSideMultiplier
       );
     } else {
       if (level < 1 || level > this.lowVoltageLevelsCount) {
@@ -107,7 +116,9 @@ export class UtilityPole extends Entity<UtilityPoleProps> {
       }
       return (
         this.props.lowVoltageStartSectionLengthInMM +
-        this.props.lowVoltageSectionLengthAddBylevelInMM * (level - 1)
+        this.props.lowVoltageSectionLengthAddBylevelInMM *
+          (level - 1) *
+          strongSideMultiplier
       );
     }
   }

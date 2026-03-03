@@ -58,6 +58,12 @@ describe("Authenticate (E2E)", () => {
     expect(response.body).toEqual({
       accessToken: expect.any(String),
       refreshToken: expect.any(String),
+      userProps: expect.objectContaining({
+        baseId: expect.any(String),
+        companyId: expect.any(String),
+        role: "ADMIN",
+        sub: expect.any(String),
+      }),
     });
   });
 });

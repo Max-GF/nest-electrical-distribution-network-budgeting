@@ -13,11 +13,7 @@ export function makeProject(
     {
       name: faker.lorem.words(3),
       description: faker.lorem.sentence(),
-      budgetAlreadyCalculated: faker.helpers.arrayElement([
-        true,
-        false,
-        undefined,
-      ]),
+      budgetAlreadyCalculated: faker.datatype.boolean(),
       lastBudgetCalculatedAt: faker.date.past(),
       ...override,
     },
