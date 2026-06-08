@@ -20,9 +20,9 @@
     "test:e2e": "vitest run --config ./vite.config.e2e.mts",
     "test:e2e:watch": "vitest --config ./vite.config.e2e.mts",
     "docker-up": "docker compose up -d",
-    "docker-down": "docker compose down",
+    "docker-down": "docker compose stop",
     "linux-docker-up": "sudo systemctl start docker && docker compose up -d",
-    "linux-docker-down": "docker compose down && sudo systemctl stop docker"
+    "linux-docker-down": "docker compose stop && sudo systemctl stop docker"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.803.0",

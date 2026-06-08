@@ -7,7 +7,7 @@ POST {{baseURL}}/authenticate
 Content-Type: application/json
 
 {
-  "email": "max@test.com.br",
+  "email": "max@test.com",
   "password": "123456"
 }
 ###
@@ -58,7 +58,7 @@ Authorization: Bearer {{authToken}}
 {
     "cpf" : "415.572.120-15",
     "name": "Max",
-    "email": "max@test.com.br",
+    "email": "max@test.com",
     "password": "123456",
     "role" : "ADMIN",
     "companyId": "c815a01e-e074-4704-b923-3de7604f1acb",
@@ -81,7 +81,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 {
     "name": "Max Gambarini Filho",
-    "email": "max@test.com.br"
+    "email": "max@test.com"
 }
 
 ###
