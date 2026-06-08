@@ -60,7 +60,7 @@ export class InMemoryUsersRepository implements UsersRepository {
     >,
     paginationParams: PaginationParams,
   ): Promise<UserWithDetails[]> {
-    const { roles, basesIds, companiesIds, isActive } = options;
+    const { roles, basesIds, companiesIds, isActive, ids } = options;
     const { page, pageSize } = paginationParams;
 
     const foundedUsers = this.items
@@ -75,6 +75,9 @@ export class InMemoryUsersRepository implements UsersRepository {
           return false;
         }
         if (isActive !== undefined && user.isActive !== isActive) {
+          return false;
+        }
+        if (ids && !ids.includes(user.id.toString())) {
           return false;
         }
         return true;

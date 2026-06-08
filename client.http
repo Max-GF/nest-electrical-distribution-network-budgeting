@@ -1,14 +1,6 @@
 @baseURL = http://localhost:3333 
 @authToken = {{authentificate.response.body.accessToken}}
 
-# @name authentificate
-POST {{baseURL}}/authenticate
-Content-Type: application/json
-
-{
-  "email": "MAX@TEST.COM.BR",
-  "password": "123456"
-}
 ###
 # @name authentificate
 POST {{baseURL}}/authenticate
@@ -45,8 +37,8 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
  
 {
-    "name": "Test_Base_4",
-    "companyId": "7b5e3741-1b40-4744-b009-3ea7ec8cc66b"
+    "name": "Test_Base_1",
+    "companyId": "103df4e9-ba40-4a8f-afe4-1e58fb60d087"
 }
 ###
 
@@ -69,13 +61,13 @@ Authorization: Bearer {{authToken}}
     "email": "max@test.com.br",
     "password": "123456",
     "role" : "ADMIN",
-    "companyId": "7b5e3741-1b40-4744-b009-3ea7ec8cc66b",
-    "baseId" : "1a7fc300-aa3b-4933-96a6-e73fb52ad6e6"
+    "companyId": "103df4e9-ba40-4a8f-afe4-1e58fb60d087",
+    "baseId" : "fda7e164-2de4-493f-96bb-3a3bc9823ea7"
 }
 ###
 
 # @name fetch_accounts
-GET {{baseURL}}/accounts
+GET {{baseURL}}/accounts?ids=9d980633-057e-4674-9e55-eb7b103e6edb
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
 

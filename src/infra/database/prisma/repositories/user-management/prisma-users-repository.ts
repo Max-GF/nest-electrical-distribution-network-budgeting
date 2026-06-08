@@ -55,7 +55,7 @@ export class PrismaUsersRepository implements UsersRepository {
     >,
     paginationParams: PaginationParams,
   ): Promise<UserWithDetails[]> {
-    const { roles, basesIds, companiesIds, isActive } = options;
+    const { roles, basesIds, companiesIds, isActive, ids } = options;
     const { page, pageSize } = paginationParams;
 
     const users = await this.prisma.user.findMany({
@@ -68,6 +68,7 @@ export class PrismaUsersRepository implements UsersRepository {
           ? { companyId: { in: companiesIds.map((id) => id.toString()) } }
           : {}),
         ...(isActive !== undefined ? { isActive } : {}),
+        ...(ids ? { id: { in: ids.map((id) => id.toString()) } } : {}),
       },
       include: {
         company: true,

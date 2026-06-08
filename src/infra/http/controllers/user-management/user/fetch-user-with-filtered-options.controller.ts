@@ -15,6 +15,13 @@ import { FetchUsersWithFilteredOptionsDto } from "../../../swagger/user-manageme
 import { FetchUsersWithFilteredOptionsResponse } from "../../../swagger/user-management/responses/fetch-users-with-filtered-options.response";
 
 const fetchUsersWithFilteredOptionsQuerySchema = z.object({
+  ids: z
+    .string()
+    .optional()
+    .transform((str) => {
+      if (str === undefined) return undefined;
+      return str.split(",").map((tag) => tag.trim());
+    }),
   roles: z
     .string()
     .optional()

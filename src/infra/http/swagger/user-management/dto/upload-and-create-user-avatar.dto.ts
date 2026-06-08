@@ -6,5 +6,5 @@ export class UploadAndCreateUserAvatarDto {
     type: "string",
     format: "binary",
   })
-  image!: Express.Multer.File;
+  file!: Express.Multer.File;
 }

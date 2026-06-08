@@ -2,13 +2,14 @@ import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "src/core/either";
 import { NotAllowedError } from "src/core/errors/errors-user-management/not-allowed-error";
 import {
-    UserRole,
-    UserRoleEntries,
+  UserRole,
+  UserRoleEntries,
 } from "../../../enterprise/entities/value-objects/user-roles";
 import { UserWithDetails } from "../../../enterprise/entities/value-objects/user-with-details";
 import { UsersRepository } from "../../repositories/users-repository";
 
 export interface FetchUsersWithFilteredOptionsUseCaseRequest {
+  ids?: string[];
   roles?: string[];
   basesIds?: string[];
   companiesIds?: string[];
@@ -29,6 +30,7 @@ export class FetchUsersWithFilteredOptionsUseCase {
   constructor(private usersRepository: UsersRepository) {}
 
   async execute({
+    ids,
     roles,
     basesIds,
     companiesIds,
@@ -52,7 +54,7 @@ export class FetchUsersWithFilteredOptionsUseCase {
       }
     }
     const users = await this.usersRepository.fetchWithFilteredOptions(
-      { basesIds, companiesIds, roles, isActive },
+      { ids, basesIds, companiesIds, roles, isActive },
       {
         page: page ?? 1,
         pageSize: pageSize ?? 40,

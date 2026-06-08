@@ -8,12 +8,12 @@ export class PrismaService
 {
   constructor() {
     super({
-      // log: [
-      //   "query", // Just for debugging purposes
-      //   "info",
-      //   "warn",
-      //   "error",
-      // ],
+      log: [
+        "query", // Just for debugging purposes
+        "info",
+        "warn",
+        "error",
+      ],
     });
   }
   onModuleInit() {
