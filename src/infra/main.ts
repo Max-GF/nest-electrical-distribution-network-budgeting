@@ -1,5 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { json, urlencoded } from "express";
 import { AppModule } from "./app.module";
 import { EnvService } from "./env/env.service";
 
@@ -8,6 +9,8 @@ async function bootstrap() {
     logger: ["log", "debug", "error", "fatal", "verbose", "warn"], // For production, set to false
   });
 
+  app.use(json({ limit: "1mb" }));
+  app.use(urlencoded({ extended: true, limit: "1mb" }));
   app.enableCors();
 
   const config = new DocumentBuilder()
