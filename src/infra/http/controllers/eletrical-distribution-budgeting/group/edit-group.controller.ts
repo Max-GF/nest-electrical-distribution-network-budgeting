@@ -22,7 +22,7 @@ import { GroupPresenter } from "../../../presenters/eletrical-distribution-budge
 import { CreateGroupResponse } from "../../../swagger/eletrical-distribution-budgeting/responses/group/create-group.response";
 
 const editGroupItemSchema = z.object({
-  groupItemId: z.string().uuid().optional(),
+  groupItemId: z.string().uuid(),
   quantity: z.number().optional(),
   addByPhase: z.number().optional(),
   description: z.string().optional(),

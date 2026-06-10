@@ -1,7 +1,7 @@
 export type TensionLevelEntries = (typeof TensionLevel.VALID_VALUES)[number];
 
 export class TensionLevel {
-  static readonly VALID_VALUES = ["LOW", "MEDIUM"] as const;
+  static readonly VALID_VALUES = ["LOW", "MEDIUM", "ANY"] as const;
 
   public readonly value: TensionLevelEntries;
 

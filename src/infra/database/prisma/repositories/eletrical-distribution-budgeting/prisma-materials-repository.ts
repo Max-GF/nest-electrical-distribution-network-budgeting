@@ -102,6 +102,7 @@ export class PrismaMaterialsRepository implements MaterialsRepository {
         where,
         take: paginationParams.pageSize,
         skip: (paginationParams.page - 1) * paginationParams.pageSize,
+        orderBy: [{ description: "asc" }, { code: "asc" }],
       }),
     ]);
 
