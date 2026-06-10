@@ -34,18 +34,18 @@ export class CreateBulkOfCableConnectorsController {
     @Body(new ZodValidationPipe(createBulkOfCableConnectorsBodySchema))
     body: CreateBulkOfCableConnectorsDto,
   ): Promise<{
-    message: string;
-    cableConnectors: ReturnType<typeof CableConnectorPresenter.toHttp>[];
+    created: ReturnType<typeof CableConnectorPresenter.toHttp>[];
+    failed: { error: object; cableConnector: object }[];
   }> {
     const result = await this.createBulkOfCableConnectors.execute(
       body.cableConnectors,
     );
 
-    const { created } = result.value;
+    const { created, failed } = result.value;
 
     return {
-      message: "Cable connectors created successfully",
-      cableConnectors: created.map(CableConnectorPresenter.toHttp),
+      created: created.map(CableConnectorPresenter.toHttp),
+      failed,
     };
   }
 }

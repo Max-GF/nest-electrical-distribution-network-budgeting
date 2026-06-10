@@ -29,16 +29,16 @@ export class CreateBulkOfPoleScrewsController {
     @Body(new ZodValidationPipe(createBulkOfPoleScrewsBodySchema))
     body: CreateBulkOfPoleScrewsDto,
   ): Promise<{
-    message: string;
-    poleScrews: ReturnType<typeof PoleScrewPresenter.toHttp>[];
+    created: ReturnType<typeof PoleScrewPresenter.toHttp>[];
+    failed: { error: object; poleScrew: object }[];
   }> {
     const result = await this.createBulkOfPoleScrews.execute(body.poleScrews);
 
-    const { created } = result.value;
+    const { created, failed } = result.value;
 
     return {
-      message: "Pole screws created successfully",
-      poleScrews: created.map(PoleScrewPresenter.toHttp),
+      created: created.map(PoleScrewPresenter.toHttp),
+      failed,
     };
   }
 }
