@@ -64,7 +64,7 @@ describe("Edit Material", () => {
     if (result.isLeft()) {
       expect(result.value).toBeInstanceOf(NotAllowedError);
       expect(result.value.message).toBe(
-        "Invalid tension level: high. Valid values are: LOW, MEDIUM.",
+        `Invalid tension level: high. Valid values are: ${TensionLevel.VALID_VALUES.join(", ")}.`,
       );
     }
   });

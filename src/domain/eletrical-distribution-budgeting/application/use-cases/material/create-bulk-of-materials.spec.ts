@@ -1,3 +1,4 @@
+import { TensionLevel } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
 import { InMemoryMaterialsRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-materials-repository";
 import { CreateBulkOfMaterialsUseCase } from "./create-bulk-of-materials";
 import { CreateMaterialUseCaseRequest } from "./create-material";
@@ -47,7 +48,7 @@ describe("Create bulk of Material", () => {
       result.value.failed.filter(
         (item) =>
           item.error.message ===
-          `Invalid tension level: high. Valid values are: LOW, MEDIUM.`,
+          `Invalid tension level: high. Valid values are: ${TensionLevel.VALID_VALUES.join(", ")}.`,
       ),
     ).toHaveLength(10);
   });

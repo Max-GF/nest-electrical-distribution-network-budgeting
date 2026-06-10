@@ -66,7 +66,7 @@ describe("Fetch materials with options", () => {
     if (result4.isLeft()) {
       expect(result4.value).toBeInstanceOf(NotAllowedError);
       expect(result4.value.message).toBe(
-        "Invalid tension level: invalid_tension. Valid values are: LOW, MEDIUM.",
+        `Invalid tension level: invalid_tension. Valid values are: ${TensionLevel.VALID_VALUES.join(", ")}.`,
       );
     }
   });

@@ -1,3 +1,4 @@
+import { TensionLevel } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
 import { InMemoryCablesRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-cables-repository";
 import { CreateBulkOfCablesUseCase } from "./create-bulk-of-cables";
 import { CreateCableUseCaseRequest } from "./create-cable";
@@ -58,7 +59,7 @@ describe("Create bulk of Pole Screw", () => {
       result.value.failed.filter(
         (item) =>
           item.error.message ===
-          "Invalid tension level: HIGH. Valid values are: LOW, MEDIUM.",
+          `Invalid tension level: HIGH. Valid values are: ${TensionLevel.VALID_VALUES.join(", ")}.`,
       ),
     ).toHaveLength(10);
   });

@@ -1,6 +1,7 @@
 import { NegativeCableSectionError } from "src/core/errors/erros-eletrical-distribution-budgeting/negative-cable-section-length-error";
 import { AlreadyRegisteredError } from "src/core/errors/generics/already-registered-error";
 import { NotAllowedError } from "src/core/errors/generics/not-allowed-error";
+import { TensionLevel } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
 import { makeCable } from "test/factories/eletrical-distribution-budgeting/make-cable";
 import { InMemoryCablesRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-cables-repository";
 import { CreateCableUseCase } from "./create-cable";
@@ -83,7 +84,7 @@ describe("Create Cable", () => {
     if (result.isLeft()) {
       expect(result.value).toBeInstanceOf(NotAllowedError);
       expect(result.value.message).toBe(
-        "Invalid tension level: HIGH. Valid values are: LOW, MEDIUM.",
+        `Invalid tension level: HIGH. Valid values are: ${TensionLevel.VALID_VALUES.join(", ")}.`,
       );
     }
   });
