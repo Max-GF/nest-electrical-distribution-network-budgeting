@@ -19,7 +19,7 @@ describe("Edit Cable", () => {
     const cableToEdit = makeCable({
       code: 123456,
       description: "3000mm Cable",
-      unit: "MM",
+      unit: "M",
       sectionAreaInMM: 3000,
       tension: TensionLevel.create("LOW"),
     });
@@ -28,9 +28,10 @@ describe("Edit Cable", () => {
     const result = await sut.execute({
       cableId: cableToEdit.id.toString(),
       description: "4000mm Cable",
-      unit: "kg",
+      unit: "KG",
       sectionAreaInMM: 4000,
       tension: "MEDIUM",
+      meterToKgConversionFactor: 0.2,
     });
 
     expect(inMemoryCablesRepository.items).toHaveLength(1);
@@ -42,6 +43,46 @@ describe("Edit Cable", () => {
       );
       expect(inMemoryCablesRepository.items[0].tension.value).toBe("MEDIUM");
       expect(inMemoryCablesRepository.items[0].unit).toBe("KG");
+      expect(inMemoryCablesRepository.items[0].meterToKgConversionFactor).toBe(
+        0.2,
+      );
+    }
+  });
+
+  it("should not be able to edit unit to KG without factor (if original was M)", async () => {
+    const cableToEdit = makeCable({ unit: "M" });
+    await inMemoryCablesRepository.createMany([cableToEdit]);
+
+    const result = await sut.execute({
+      cableId: cableToEdit.id.toString(),
+      unit: "KG",
+    });
+
+    expect(result.isLeft()).toBeTruthy();
+    if (result.isLeft()) {
+      expect(result.value).toBeInstanceOf(NotAllowedError);
+      expect(result.value.message).toContain(
+        "Meter to kg conversion factor must be provided",
+      );
+    }
+  });
+
+  it("should clear conversion factor when changing unit to M", async () => {
+    const cableToEdit = makeCable({
+      unit: "KG",
+      meterToKgConversionFactor: 0.5,
+    });
+    await inMemoryCablesRepository.createMany([cableToEdit]);
+
+    const result = await sut.execute({
+      cableId: cableToEdit.id.toString(),
+      unit: "M",
+    });
+
+    expect(result.isRight()).toBeTruthy();
+    if (result.isRight()) {
+      expect(result.value.cable.unit).toBe("M");
+      expect(result.value.cable.meterToKgConversionFactor).toBeUndefined();
     }
   });
 
@@ -49,7 +90,7 @@ describe("Edit Cable", () => {
     const cableToEdit = makeCable({
       code: 123456,
       description: "3000mm Cable",
-      unit: "MM",
+      unit: "M",
       sectionAreaInMM: 3000,
     });
     await inMemoryCablesRepository.createMany([cableToEdit]);
@@ -57,7 +98,7 @@ describe("Edit Cable", () => {
     const result = await sut.execute({
       cableId: cableToEdit.id.toString(),
       description: "4000mm Cable",
-      unit: "kg",
+      unit: "KG",
       sectionAreaInMM: -4000,
     });
 

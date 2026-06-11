@@ -5,10 +5,12 @@ import { TensionLevel } from "./value-objects/tension-level";
 export interface CableProps {
   code: number;
   description: string;
-  unit: string;
+  unit: "M" | "KG";
 
   tension: TensionLevel;
   sectionAreaInMM: number;
+
+  meterToKgConversionFactor?: number;
 }
 
 export class Cable extends Entity<CableProps> {
@@ -25,10 +27,10 @@ export class Cable extends Entity<CableProps> {
   set description(description: string) {
     this.props.description = description;
   }
-  get unit(): string {
+  get unit(): "M" | "KG" {
     return this.props.unit;
   }
-  set unit(unit: string) {
+  set unit(unit: "M" | "KG") {
     this.props.unit = unit;
   }
   get tension(): TensionLevel {
@@ -42,5 +44,11 @@ export class Cable extends Entity<CableProps> {
   }
   set sectionAreaInMM(sectionAreaInMM: number) {
     this.props.sectionAreaInMM = sectionAreaInMM;
+  }
+  get meterToKgConversionFactor(): number | undefined {
+    return this.props.meterToKgConversionFactor;
+  }
+  set meterToKgConversionFactor(meterToKgConversionFactor: number | undefined) {
+    this.props.meterToKgConversionFactor = meterToKgConversionFactor;
   }
 }

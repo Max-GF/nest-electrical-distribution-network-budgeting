@@ -4,7 +4,10 @@ import { NegativeCableSectionError } from "src/core/errors/erros-eletrical-distr
 import { AlreadyRegisteredError } from "src/core/errors/generics/already-registered-error";
 import { NotAllowedError } from "src/core/errors/generics/not-allowed-error";
 import { Cable } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/cable";
-import { TensionLevel } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
+import {
+  TensionLevel,
+  TensionLevelEntries,
+} from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
 import { CablesRepository } from "../../repositories/cables-repository";
 import { CreateCableUseCaseRequest } from "./create-cable";
 
@@ -38,7 +41,16 @@ export class CreateBulkOfCablesUseCase {
     );
 
     for (const cableToCreate of cablesToCreate) {
-      if (cableToCreate.sectionAreaInMM <= 0) {
+      const {
+        code,
+        description,
+        unit,
+        tension,
+        sectionAreaInMM,
+        meterToKgConversionFactor,
+      } = cableToCreate;
+
+      if (sectionAreaInMM <= 0) {
         failed.push({
           error: new NegativeCableSectionError(
             "Cable section area must be greater than zero",
@@ -47,18 +59,52 @@ export class CreateBulkOfCablesUseCase {
         });
         continue;
       }
-      const upperCasedTension = cableToCreate.tension.toUpperCase();
-      if (!TensionLevel.isValid(upperCasedTension)) {
+
+      if (
+        meterToKgConversionFactor !== undefined &&
+        meterToKgConversionFactor <= 0
+      ) {
         failed.push({
-          error: new NegativeCableSectionError(
-            `Invalid tension level: ${cableToCreate.tension}. Valid values are: ${TensionLevel.VALID_VALUES.join(", ")}.`,
+          error: new NotAllowedError(
+            "Meter to kg conversion factor must be greater than zero",
           ),
           cable: cableToCreate,
         });
         continue;
       }
 
-      const { code, description, unit, sectionAreaInMM } = cableToCreate;
+      const uperCasedUnit = unit.toUpperCase();
+      if (uperCasedUnit !== "M" && uperCasedUnit !== "KG") {
+        failed.push({
+          error: new NotAllowedError(
+            `Invalid unit: ${unit}. Valid values are: M, KG.`,
+          ),
+          cable: cableToCreate,
+        });
+        continue;
+      }
+
+      if (uperCasedUnit === "KG" && meterToKgConversionFactor === undefined) {
+        failed.push({
+          error: new NotAllowedError(
+            "Meter to kg conversion factor must be provided when unit is KG",
+          ),
+          cable: cableToCreate,
+        });
+        continue;
+      }
+
+      const upperCasedTension = tension.toUpperCase();
+      if (!TensionLevel.isValid(upperCasedTension)) {
+        failed.push({
+          error: new NotAllowedError(
+            `Invalid tension level: ${tension}. Valid values are: ${TensionLevel.VALID_VALUES.join(", ")}.`,
+          ),
+          cable: cableToCreate,
+        });
+        continue;
+      }
+
       if (actualCodesInRepository.has(code)) {
         failed.push({
           error: new AlreadyRegisteredError("Cable code already registered"),
@@ -66,12 +112,14 @@ export class CreateBulkOfCablesUseCase {
         });
         continue;
       }
+
       const cable = Cable.create({
         code,
         description: description.toUpperCase(),
-        unit: unit.toUpperCase(),
-        tension: TensionLevel.create(upperCasedTension),
+        unit: uperCasedUnit as "M" | "KG",
+        tension: TensionLevel.create(upperCasedTension as TensionLevelEntries),
         sectionAreaInMM,
+        meterToKgConversionFactor,
       });
       created.push(cable);
       actualCodesInRepository.add(code);

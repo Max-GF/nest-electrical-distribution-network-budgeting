@@ -20,7 +20,7 @@ describe("Create Cable", () => {
     const result = await sut.execute({
       code: 123456,
       description: "3000mm Cable",
-      unit: "MM",
+      unit: "M",
       sectionAreaInMM: 1000,
       tension: "LOW",
     });
@@ -31,6 +31,81 @@ describe("Create Cable", () => {
       expect(inMemoryCablesRepository.items[0]).toEqual(result.value.cable);
     }
   });
+
+  it("should be able to create a Cable with unit KG and conversion factor", async () => {
+    expect(inMemoryCablesRepository.items).toHaveLength(0);
+    const result = await sut.execute({
+      code: 123456,
+      description: "3000mm Cable",
+      unit: "KG",
+      sectionAreaInMM: 1000,
+      tension: "LOW",
+      meterToKgConversionFactor: 0.15,
+    });
+
+    expect(inMemoryCablesRepository.items).toHaveLength(1);
+    expect(result.isRight()).toBeTruthy();
+    if (result.isRight()) {
+      expect(inMemoryCablesRepository.items[0].unit).toBe("KG");
+      expect(inMemoryCablesRepository.items[0].meterToKgConversionFactor).toBe(
+        0.15,
+      );
+    }
+  });
+
+  it("should not be able to create a cable with invalid unit", async () => {
+    const result = await sut.execute({
+      code: 123456,
+      description: "Cable",
+      unit: "INVALID",
+      sectionAreaInMM: 10,
+      tension: "LOW",
+    });
+
+    expect(result.isLeft()).toBeTruthy();
+    if (result.isLeft()) {
+      expect(result.value).toBeInstanceOf(NotAllowedError);
+      expect(result.value.message).toContain("Invalid unit");
+    }
+  });
+
+  it("should not be able to create a cable with unit KG and no conversion factor", async () => {
+    const result = await sut.execute({
+      code: 123456,
+      description: "Cable",
+      unit: "KG",
+      sectionAreaInMM: 10,
+      tension: "LOW",
+    });
+
+    expect(result.isLeft()).toBeTruthy();
+    if (result.isLeft()) {
+      expect(result.value).toBeInstanceOf(NotAllowedError);
+      expect(result.value.message).toContain(
+        "Meter to kg conversion factor must be provided",
+      );
+    }
+  });
+
+  it("should not be able to create a cable with non-positive conversion factor", async () => {
+    const result = await sut.execute({
+      code: 123456,
+      description: "Cable",
+      unit: "KG",
+      sectionAreaInMM: 10,
+      tension: "LOW",
+      meterToKgConversionFactor: 0,
+    });
+
+    expect(result.isLeft()).toBeTruthy();
+    if (result.isLeft()) {
+      expect(result.value).toBeInstanceOf(NotAllowedError);
+      expect(result.value.message).toContain(
+        "Meter to kg conversion factor must be greater than zero",
+      );
+    }
+  });
+
   it("should be not able to create two or more cables with same code", async () => {
     const alreadyRegistedCable = makeCable({ code: 123456 });
     await inMemoryCablesRepository.createMany([alreadyRegistedCable]);
@@ -38,7 +113,7 @@ describe("Create Cable", () => {
     const result = await sut.execute({
       code: 123456,
       description: "3000mm cable",
-      unit: "MM",
+      unit: "M",
       sectionAreaInMM: 32132,
       tension: "LOW",
     });
@@ -55,7 +130,7 @@ describe("Create Cable", () => {
     const result = await sut.execute({
       code: 123456,
       description: "3000mm cable",
-      unit: "MM",
+      unit: "M",
       sectionAreaInMM: 0,
       tension: "LOW",
     });
@@ -74,7 +149,7 @@ describe("Create Cable", () => {
     const result = await sut.execute({
       code: 123456,
       description: "3000mm cable",
-      unit: "MM",
+      unit: "M",
       sectionAreaInMM: 1000,
       tension: "HIGH",
     });

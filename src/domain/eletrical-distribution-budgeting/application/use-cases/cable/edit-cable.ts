@@ -5,7 +5,10 @@ import { AlreadyRegisteredError } from "src/core/errors/generics/already-registe
 import { NotAllowedError } from "src/core/errors/generics/not-allowed-error";
 import { ResourceNotFoundError } from "src/core/errors/generics/resource-not-found-error";
 import { Cable } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/cable";
-import { TensionLevel } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
+import {
+  TensionLevel,
+  TensionLevelEntries,
+} from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
 import { CablesRepository } from "../../repositories/cables-repository";
 
 interface EditCableUseCaseRequest {
@@ -15,6 +18,8 @@ interface EditCableUseCaseRequest {
 
   tension?: string;
   sectionAreaInMM?: number;
+
+  meterToKgConversionFactor?: number;
 }
 
 type EditCableUseCaseResponse = Either<
@@ -40,8 +45,14 @@ export class EditCableUseCase {
       return left(new NotAllowedError("No entries provided"));
     }
 
-    const { cableId, description, sectionAreaInMM, tension, unit } =
-      editCableUseCaseRequest;
+    const {
+      cableId,
+      description,
+      sectionAreaInMM,
+      tension,
+      unit,
+      meterToKgConversionFactor,
+    } = editCableUseCaseRequest;
 
     if (sectionAreaInMM && sectionAreaInMM <= 0) {
       return left(
@@ -50,6 +61,18 @@ export class EditCableUseCase {
         ),
       );
     }
+
+    if (
+      meterToKgConversionFactor !== undefined &&
+      meterToKgConversionFactor <= 0
+    ) {
+      return left(
+        new NotAllowedError(
+          "Meter to kg conversion factor must be greater than zero",
+        ),
+      );
+    }
+
     const upperCasedTension = tension ? tension.toUpperCase() : null;
     if (
       upperCasedTension !== null &&
@@ -61,6 +84,18 @@ export class EditCableUseCase {
         ),
       );
     }
+
+    const upperCasedUnit = unit ? unit.toUpperCase() : null;
+    if (
+      upperCasedUnit !== null &&
+      upperCasedUnit !== "M" &&
+      upperCasedUnit !== "KG"
+    ) {
+      return left(
+        new NotAllowedError(`Invalid unit: ${unit}. Valid values are: M, KG.`),
+      );
+    }
+
     const cableToEdit = await this.cablesRepository.findById(cableId);
 
     if (!cableToEdit) {
@@ -76,12 +111,36 @@ export class EditCableUseCase {
       hasToEdit = true;
     }
     if (upperCasedTension !== null) {
-      cableToEdit.tension = TensionLevel.create(upperCasedTension);
+      cableToEdit.tension = TensionLevel.create(
+        upperCasedTension as TensionLevelEntries,
+      );
       hasToEdit = true;
     }
-    if (unit && unit.toUpperCase() !== cableToEdit.unit) {
-      cableToEdit.unit = unit.toUpperCase();
+    if (upperCasedUnit !== null && upperCasedUnit !== cableToEdit.unit) {
+      cableToEdit.unit = upperCasedUnit as "M" | "KG";
+      if (cableToEdit.unit === "M") {
+        cableToEdit.meterToKgConversionFactor = undefined;
+      }
       hasToEdit = true;
+    }
+    if (
+      meterToKgConversionFactor !== undefined &&
+      meterToKgConversionFactor !== cableToEdit.meterToKgConversionFactor
+    ) {
+      cableToEdit.meterToKgConversionFactor = meterToKgConversionFactor;
+      hasToEdit = true;
+    }
+
+    // Post-edit cross-validation
+    if (
+      cableToEdit.unit === "KG" &&
+      cableToEdit.meterToKgConversionFactor === undefined
+    ) {
+      return left(
+        new NotAllowedError(
+          "Meter to kg conversion factor must be provided when unit is KG",
+        ),
+      );
     }
 
     if (hasToEdit) {

@@ -14,6 +14,8 @@ export interface CreateCableUseCaseRequest {
 
   tension: string;
   sectionAreaInMM: number;
+
+  meterToKgConversionFactor?: number;
 }
 
 type CreateCableUseCaseResponse = Either<
@@ -33,11 +35,36 @@ export class CreateCableUseCase {
     unit,
     tension,
     sectionAreaInMM,
+    meterToKgConversionFactor,
   }: CreateCableUseCaseRequest): Promise<CreateCableUseCaseResponse> {
     if (sectionAreaInMM <= 0) {
       return left(
         new NegativeCableSectionError(
           "Cable section area must be greater than zero",
+        ),
+      );
+    }
+    if (
+      meterToKgConversionFactor !== undefined &&
+      meterToKgConversionFactor <= 0
+    ) {
+      return left(
+        new NotAllowedError(
+          "Meter to kg conversion factor must be greater than zero",
+        ),
+      );
+    }
+    const uperCasedUnit = unit.toUpperCase();
+    if (uperCasedUnit !== "M" && uperCasedUnit !== "KG") {
+      return left(
+        new NotAllowedError(`Invalid unit: ${unit}. Valid values are: M, KG.`),
+      );
+    }
+
+    if (uperCasedUnit === "KG" && meterToKgConversionFactor === undefined) {
+      return left(
+        new NotAllowedError(
+          "Meter to kg conversion factor must be provided when unit is KG",
         ),
       );
     }
@@ -57,9 +84,10 @@ export class CreateCableUseCase {
     const cable = Cable.create({
       code,
       description: description.toUpperCase(),
-      unit: unit.toUpperCase(),
+      unit: uperCasedUnit,
       tension: TensionLevel.create(upperCasedTension),
       sectionAreaInMM,
+      meterToKgConversionFactor,
     });
     await this.cablesRepository.createMany([cable]);
     return right({
