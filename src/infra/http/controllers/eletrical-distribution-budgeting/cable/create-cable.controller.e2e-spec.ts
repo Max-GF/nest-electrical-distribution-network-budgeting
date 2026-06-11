@@ -55,9 +55,10 @@ describe("Create Cable (E2E)", () => {
       .send({
         code: 12345,
         description: "CABO DE ALUMÍNIO NU 35MM²",
-        unit: "M",
+        unit: "KG",
         tension: "LOW",
         sectionAreaInMM: 35,
+        meterToKgConversionFactor: 0.15,
       });
 
     const createdCable = await cablesRepository.findById(
@@ -65,15 +66,17 @@ describe("Create Cable (E2E)", () => {
     );
     expect(response.statusCode).toBe(201);
     expect(createdCable).toBeDefined();
+    expect(createdCable?.meterToKgConversionFactor).toBe(0.15);
     expect(response.body).toEqual(
       expect.objectContaining({
         message: "Cable created successfully",
         cable: expect.objectContaining({
           code: 12345,
           description: "CABO DE ALUMÍNIO NU 35MM²",
-          unit: "M",
+          unit: "KG",
           tension: "LOW",
           sectionAreaInMM: 35,
+          meterToKgConversionFactor: 0.15,
         }),
       }),
     );

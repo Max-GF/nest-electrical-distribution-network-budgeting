@@ -18,4 +18,7 @@ export class CableResponse {
 
   @ApiProperty({ example: 50 })
   sectionAreaInMM!: number;
+
+  @ApiProperty({ example: 0.15, required: false })
+  meterToKgConversionFactor?: number;
 }

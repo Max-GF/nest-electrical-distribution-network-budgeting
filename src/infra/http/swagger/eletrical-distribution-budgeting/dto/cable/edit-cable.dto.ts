@@ -25,4 +25,10 @@ export class EditCableDto {
     example: 35,
   })
   sectionAreaInMM?: number;
+
+  @ApiPropertyOptional({
+    description: "The conversion factor from meters to kg",
+    example: 0.15,
+  })
+  meterToKgConversionFactor?: number;
 }

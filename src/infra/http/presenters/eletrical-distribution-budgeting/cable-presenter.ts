@@ -9,6 +9,7 @@ export class CablePresenter {
       unit: cable.unit,
       tension: cable.tension.value,
       sectionAreaInMM: cable.sectionAreaInMM,
+      meterToKgConversionFactor: cable.meterToKgConversionFactor,
     };
   }
 }

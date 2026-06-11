@@ -31,4 +31,12 @@ export class CreateCableDto {
     example: 35,
   })
   sectionAreaInMM!: number;
+
+  @ApiProperty({
+    description:
+      "The conversion factor from meters to kg (Required if unit is KG)",
+    example: 0.15,
+    required: false,
+  })
+  meterToKgConversionFactor?: number;
 }

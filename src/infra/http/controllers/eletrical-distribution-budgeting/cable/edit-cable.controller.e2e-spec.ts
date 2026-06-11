@@ -59,6 +59,7 @@ describe("Edit Cable (E2E)", () => {
       .send({
         description: "NEW DESCRIPTION",
         unit: "KG",
+        meterToKgConversionFactor: 0.25,
       });
 
     const updatedCable = await cablesRepository.findById(cable.id.toString());
@@ -67,6 +68,7 @@ describe("Edit Cable (E2E)", () => {
     expect(updatedCable).toBeDefined();
     expect(updatedCable?.description).toBe("NEW DESCRIPTION");
     expect(updatedCable?.unit).toBe("KG");
+    expect(updatedCable?.meterToKgConversionFactor).toBe(0.25);
     expect(response.body).toEqual(
       expect.objectContaining({
         message: "Cable edited successfully",
@@ -74,6 +76,7 @@ describe("Edit Cable (E2E)", () => {
           id: cable.id.toString(),
           description: "NEW DESCRIPTION",
           unit: "KG",
+          meterToKgConversionFactor: 0.25,
         }),
       }),
     );

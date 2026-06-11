@@ -23,6 +23,7 @@ const createCableBodySchema = z.object({
   unit: z.string(),
   tension: z.string(),
   sectionAreaInMM: z.number(),
+  meterToKgConversionFactor: z.number().optional(),
 });
 
 @ApiTags("Cable")
@@ -39,13 +40,21 @@ export class CreateCableController {
     message: string;
     cable: ReturnType<typeof CablePresenter.toHttp>;
   }> {
-    const { code, description, unit, tension, sectionAreaInMM } = body;
+    const {
+      code,
+      description,
+      unit,
+      tension,
+      sectionAreaInMM,
+      meterToKgConversionFactor,
+    } = body;
     const result = await this.createCable.execute({
       code,
       description,
       unit,
       tension,
       sectionAreaInMM,
+      meterToKgConversionFactor,
     });
 
     if (result.isLeft()) {

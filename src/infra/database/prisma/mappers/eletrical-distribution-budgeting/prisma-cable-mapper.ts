@@ -9,9 +9,10 @@ export class PrismaCableMapper {
       {
         code: raw.code,
         description: raw.description,
-        unit: raw.unit,
+        unit: raw.unit as "M" | "KG",
         tension: TensionLevel.create(raw.tension),
         sectionAreaInMM: raw.sectionAreaInMM,
+        meterToKgConversionFactor: raw.meterToKgConversionFactor ?? undefined,
       },
       new UniqueEntityID(raw.id),
     );
@@ -25,6 +26,7 @@ export class PrismaCableMapper {
       unit: cable.unit,
       tension: cable.tension.value,
       sectionAreaInMM: cable.sectionAreaInMM,
+      meterToKgConversionFactor: cable.meterToKgConversionFactor ?? null,
     };
   }
 }

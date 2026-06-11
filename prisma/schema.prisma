@@ -15,6 +15,12 @@ enum UserRole {
   COMMON
 }
 
+enum TensionLevel {
+  LOW
+  MEDIUM
+  ANY
+}
+
 model User {
   id String @id @default(uuid())
 
@@ -88,11 +94,6 @@ model Avatar {
   @@map("avatars")
 }
 
-enum TensionLevel {
-  LOW
-  MEDIUM
-}
-
 model Project {
   id                      String    @id @default(uuid())
   name                    String
@@ -144,6 +145,7 @@ model Cable {
   unit            String
   tension         TensionLevel
   sectionAreaInMM Float        @map("section_area_in_mm")
+  meterToKgConversionFactor Float? @map("meter_to_kg_conversion_factor")
 
   pointsAsMediumEntrance Point[] @relation("MediumTensionEntranceCable")
   pointsAsMediumExit     Point[] @relation("MediumTensionExitCable")

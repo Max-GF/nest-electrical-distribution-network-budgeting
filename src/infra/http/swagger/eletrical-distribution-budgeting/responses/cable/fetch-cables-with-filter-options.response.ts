@@ -26,6 +26,7 @@ export function FetchCablesWithFilterOptionsResponse() {
                 unit: { type: "string", example: "M" },
                 tension: { type: "string", example: "LOW" },
                 sectionAreaInMM: { type: "number", example: 35 },
+                meterToKgConversionFactor: { type: "number", example: 0.15 },
               },
             },
           },

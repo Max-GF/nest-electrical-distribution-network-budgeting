@@ -57,9 +57,10 @@ describe("Create Bulk Of Cables (E2E)", () => {
           {
             code: 12345,
             description: "CABO DE ALUMÍNIO NU 35MM²",
-            unit: "M",
+            unit: "KG",
             tension: "LOW",
             sectionAreaInMM: 35,
+            meterToKgConversionFactor: 0.15,
           },
           {
             code: 67890,
@@ -84,10 +85,13 @@ describe("Create Bulk Of Cables (E2E)", () => {
           expect.objectContaining({
             code: 12345,
             description: "CABO DE ALUMÍNIO NU 35MM²",
+            unit: "KG",
+            meterToKgConversionFactor: 0.15,
           }),
           expect.objectContaining({
             code: 67890,
             description: "CABO DE ALUMÍNIO NU 50MM²",
+            unit: "M",
           }),
         ]),
         failed: [],

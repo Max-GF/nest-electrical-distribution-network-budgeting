@@ -15,6 +15,7 @@ const createBulkOfCablesBodySchema = z.object({
       unit: z.string(),
       tension: z.string(),
       sectionAreaInMM: z.number(),
+      meterToKgConversionFactor: z.number().optional(),
     }),
   ),
 });

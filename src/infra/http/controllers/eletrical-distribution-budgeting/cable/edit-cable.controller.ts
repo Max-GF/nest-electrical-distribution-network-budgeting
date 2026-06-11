@@ -23,6 +23,7 @@ const editCableBodySchema = z.object({
   unit: z.string().optional(),
   tension: z.string().optional(),
   sectionAreaInMM: z.number().optional(),
+  meterToKgConversionFactor: z.number().optional(),
 });
 
 @ApiTags("Cable")
@@ -40,13 +41,20 @@ export class EditCableController {
     message: string;
     cable: ReturnType<typeof CablePresenter.toHttp>;
   }> {
-    const { description, unit, tension, sectionAreaInMM } = body;
+    const {
+      description,
+      unit,
+      tension,
+      sectionAreaInMM,
+      meterToKgConversionFactor,
+    } = body;
     const result = await this.editCable.execute({
       cableId,
       description,
       unit,
       tension,
       sectionAreaInMM,
+      meterToKgConversionFactor,
     });
 
     if (result.isLeft()) {
