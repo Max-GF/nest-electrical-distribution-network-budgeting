@@ -5,13 +5,13 @@ import { AppModule } from "src/infra/app.module";
 import { DatabaseModule } from "src/infra/database/database.module";
 import { PrismaService } from "src/infra/database/prisma/prisma.service";
 import request from "supertest";
+import { makeCable } from "test/factories/eletrical-distribution-budgeting/make-cable";
+import { makePoint } from "test/factories/eletrical-distribution-budgeting/make-point";
+import { makeProject } from "test/factories/eletrical-distribution-budgeting/make-project";
+import { makeUtilityPole } from "test/factories/eletrical-distribution-budgeting/make-utility-pole";
+import { makeBase } from "test/factories/user-management/make-base";
 import { makeCompany } from "test/factories/user-management/make-company";
 import { makeUser } from "test/factories/user-management/make-user";
-import { makeBase } from "test/factories/user-management/make-base";
-import { makeProject } from "test/factories/eletrical-distribution-budgeting/make-project";
-import { makePoint } from "test/factories/eletrical-distribution-budgeting/make-point";
-import { makeCable } from "test/factories/eletrical-distribution-budgeting/make-cable";
-import { makeUtilityPole } from "test/factories/eletrical-distribution-budgeting/make-utility-pole";
 
 describe("Edit Point (E2E)", () => {
   let app: INestApplication;
@@ -136,6 +136,7 @@ describe("Edit Point (E2E)", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
+      message: "Point edited successfully",
       point: expect.objectContaining({
         id: point.id.toString(),
         description: "New description",

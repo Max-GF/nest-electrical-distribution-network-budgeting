@@ -124,6 +124,8 @@ export class CalculateBudgetController {
 
     const { projectMaterials } = budgetResult.value;
 
-    return projectMaterials.map(CalculateBudgetPresenter.toHTTP);
+    return {
+      projectMaterials: projectMaterials.map(CalculateBudgetPresenter.toHTTP),
+    };
   }
 }

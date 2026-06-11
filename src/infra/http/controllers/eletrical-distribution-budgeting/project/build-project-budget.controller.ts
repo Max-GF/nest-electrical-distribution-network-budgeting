@@ -103,6 +103,8 @@ export class BuildProjectBudgetController {
 
     const { projectMaterials } = result.value;
 
-    return projectMaterials.map(CalculateBudgetPresenter.toHTTP);
+    return {
+      projectMaterials: projectMaterials.map(CalculateBudgetPresenter.toHTTP),
+    };
   }
 }

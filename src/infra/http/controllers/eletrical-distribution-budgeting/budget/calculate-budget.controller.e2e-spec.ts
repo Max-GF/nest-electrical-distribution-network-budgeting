@@ -165,7 +165,7 @@ describe("Calculate Budget (E2E)", () => {
       });
 
     expect(response.statusCode).toBe(201);
-    expect(response.body).toEqual(
+    expect(response.body.projectMaterials).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           projectId: project.id.toString(),

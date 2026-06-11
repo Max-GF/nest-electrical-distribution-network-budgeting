@@ -89,7 +89,10 @@ describe("Edit Project (E2E)", () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual(
       expect.objectContaining({
-        name: "Updated Project Name",
+        message: "Project edited successfully",
+        project: expect.objectContaining({
+          name: "Updated Project Name",
+        }),
       }),
     );
 

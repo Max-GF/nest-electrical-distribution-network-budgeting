@@ -85,12 +85,19 @@ describe("Fetch Projects (E2E)", () => {
       .send();
 
     expect(response.statusCode).toBe(200);
-    expect(response.body).toHaveLength(2);
-    expect(response.body).toEqual(
+    expect(response.body.projects).toHaveLength(2);
+    expect(response.body.projects).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: "Project 01" }),
         expect.objectContaining({ name: "Project 02" }),
       ]),
+    );
+    expect(response.body.pagination).toEqual(
+      expect.objectContaining({
+        actualPage: 1,
+        actualPageSize: 2,
+        lastPage: 1,
+      }),
     );
   });
 });

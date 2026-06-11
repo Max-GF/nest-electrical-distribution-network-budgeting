@@ -6,9 +6,17 @@ import {
   Post,
 } from "@nestjs/common";
 import { CreateProjectUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/project/create-project";
+import { z } from "zod";
+import { ZodValidationPipe } from "../../../pipes/zod-validation-pipe";
 import { ProjectPresenter } from "../../../presenters/eletrical-distribution-budgeting/project-presenter";
 import { CreateProjectDto } from "../../../swagger/eletrical-distribution-budgeting/dto/project/create-project.dto";
 import { CreateProjectResponse } from "../../../swagger/eletrical-distribution-budgeting/responses/project/create-project.response";
+
+const createProjectBodySchema = z.object({
+  name: z.string().min(1),
+  description: z.string().min(1),
+  budgetAlreadyCalculated: z.boolean(),
+});
 
 @Controller("/projects")
 export class CreateProjectController {
@@ -16,7 +24,13 @@ export class CreateProjectController {
 
   @Post()
   @CreateProjectResponse()
-  async handle(@Body() body: CreateProjectDto) {
+  async handle(
+    @Body(new ZodValidationPipe(createProjectBodySchema))
+    body: CreateProjectDto,
+  ): Promise<{
+    message: string;
+    project: ReturnType<typeof ProjectPresenter.toHttp>;
+  }> {
     const { name, description, budgetAlreadyCalculated } = body;
 
     const result = await this.createProjectUseCase.execute({
@@ -37,6 +51,9 @@ export class CreateProjectController {
 
     const { project } = result.value;
 
-    return ProjectPresenter.toHttp(project);
+    return {
+      message: "Project created successfully",
+      project: ProjectPresenter.toHttp(project),
+    };
   }
 }

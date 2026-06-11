@@ -12,9 +12,20 @@ import { AlreadyRegisteredError } from "src/core/errors/generics/already-registe
 import { NotAllowedError } from "src/core/errors/generics/not-allowed-error";
 import { ResourceNotFoundError } from "src/core/errors/generics/resource-not-found-error";
 import { EditPointUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/point/edit-point";
+import { ZodValidationPipe } from "src/infra/http/pipes/zod-validation-pipe";
 import { PointPresenter } from "src/infra/http/presenters/eletrical-distribution-budgeting/point-presenter";
 import { EditPointDto } from "src/infra/http/swagger/eletrical-distribution-budgeting/dto/point/edit-point.dto";
 import { EditPointResponse } from "src/infra/http/swagger/eletrical-distribution-budgeting/responses/point/edit-point.response";
+import { z } from "zod";
+
+const editPointBodySchema = z.object({
+  description: z.string().optional(),
+  lowTensionEntranceCableId: z.string().uuid().optional(),
+  lowTensionExitCableId: z.string().uuid().optional(),
+  mediumTensionEntranceCableId: z.string().uuid().optional(),
+  mediumTensionExitCableId: z.string().uuid().optional(),
+  utilityPoleId: z.string().uuid().optional(),
+});
 
 @ApiTags("Points")
 @Controller("/points/:id")
@@ -23,7 +34,13 @@ export class EditPointController {
 
   @Put()
   @EditPointResponse()
-  async handle(@Param("id") id: string, @Body() body: EditPointDto) {
+  async handle(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(editPointBodySchema)) body: EditPointDto,
+  ): Promise<{
+    message: string;
+    point: ReturnType<typeof PointPresenter.toHttp>;
+  }> {
     const {
       description,
       lowTensionEntranceCableId,
@@ -64,6 +81,7 @@ export class EditPointController {
     const { point } = result.value;
 
     return {
+      message: "Point edited successfully",
       point: PointPresenter.toHttp(point),
     };
   }

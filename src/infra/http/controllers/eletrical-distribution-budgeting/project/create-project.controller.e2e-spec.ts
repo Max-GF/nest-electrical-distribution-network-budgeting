@@ -79,8 +79,11 @@ describe("Create Project (E2E)", () => {
     expect(response.statusCode).toBe(201);
     expect(response.body).toEqual(
       expect.objectContaining({
-        name: "New Project",
-        description: "Project Description",
+        message: "Project created successfully",
+        project: expect.objectContaining({
+          name: "New Project",
+          description: "Project Description",
+        }),
       }),
     );
 

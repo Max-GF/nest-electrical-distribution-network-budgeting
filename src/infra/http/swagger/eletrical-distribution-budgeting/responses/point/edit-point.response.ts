@@ -13,6 +13,9 @@ import { EditPointDto } from "../../dto/point/edit-point.dto";
 import { PointResponse } from "./point.response";
 
 class EditPointResponseBody {
+  @ApiProperty({ example: "Point edited successfully" })
+  message!: string;
+
   @ApiProperty({ type: PointResponse })
   point!: PointResponse;
 }
