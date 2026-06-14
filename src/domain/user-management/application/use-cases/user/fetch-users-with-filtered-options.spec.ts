@@ -123,9 +123,14 @@ describe("Fetch Users filtered opttions", () => {
 
     expect(result.isRight()).toBeTruthy();
     if (result.isRight()) {
-      const { users } = result.value;
+      const { users, pagination } = result.value;
 
       expect(users).toHaveLength(20);
+      expect(pagination).toEqual({
+        actualPage: 1,
+        actualPageSize: 20,
+        lastPage: 1,
+      });
       users.forEach((user) => {
         expect(
           ["Base1Company1", "Base2Company1"].includes(user.base.id.toString()),
@@ -135,14 +140,18 @@ describe("Fetch Users filtered opttions", () => {
     const result2 = await sut.execute({
       companiesIds: ["Company2"],
       page: 1,
-      pageSize: 40,
+      pageSize: 15,
     });
 
     expect(result2.isRight()).toBeTruthy();
     if (result2.isRight()) {
-      const { users } = result2.value;
-
-      expect(users).toHaveLength(20);
+      const { users, pagination } = result2.value;
+      expect(users).toHaveLength(15);
+      expect(pagination).toEqual({
+        actualPage: 1,
+        actualPageSize: 15,
+        lastPage: 2,
+      });
       users.forEach((user) => {
         expect(user.company.id.toString()).toBe("Company2");
       });

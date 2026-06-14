@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "src/core/either";
 import { NotAllowedError } from "src/core/errors/errors-user-management/not-allowed-error";
+import { PaginationResponseParams } from "src/core/repositories/pagination-params";
 import {
   UserRole,
   UserRoleEntries,
@@ -10,6 +11,7 @@ import { UsersRepository } from "../../repositories/users-repository";
 
 export interface FetchUsersWithFilteredOptionsUseCaseRequest {
   ids?: string[];
+  name?: string;
   roles?: string[];
   basesIds?: string[];
   companiesIds?: string[];
@@ -22,6 +24,7 @@ type FetchUsersWithFilteredOptionsUseCaseResponse = Either<
   NotAllowedError,
   {
     users: UserWithDetails[];
+    pagination: PaginationResponseParams;
   }
 >;
 
@@ -31,6 +34,7 @@ export class FetchUsersWithFilteredOptionsUseCase {
 
   async execute({
     ids,
+    name,
     roles,
     basesIds,
     companiesIds,
@@ -53,16 +57,18 @@ export class FetchUsersWithFilteredOptionsUseCase {
         throw new Error("Unexpected error: " + error);
       }
     }
-    const users = await this.usersRepository.fetchWithFilteredOptions(
-      { ids, basesIds, companiesIds, roles, isActive },
-      {
-        page: page ?? 1,
-        pageSize: pageSize ?? 40,
-      },
-    );
+    const { users, pagination } =
+      await this.usersRepository.fetchWithFilteredOptions(
+        { ids, basesIds, companiesIds, roles, isActive, name },
+        {
+          page: page ?? 1,
+          pageSize: pageSize ?? 40,
+        },
+      );
 
     return right({
       users,
+      pagination,
     });
   }
 

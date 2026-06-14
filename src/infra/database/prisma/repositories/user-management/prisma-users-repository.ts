@@ -1,7 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { UserRole } from "prisma/generated/client";
+import { Prisma, UserRole } from "prisma/generated/client";
 import { DomainEvents } from "src/core/events/domain-events";
-import { PaginationParams } from "src/core/repositories/pagination-params";
+import {
+  PaginationParams,
+  PaginationResponseParams,
+} from "src/core/repositories/pagination-params";
 import { UsersRepository } from "src/domain/user-management/application/repositories/users-repository";
 import { FetchUsersWithFilteredOptionsUseCaseRequest } from "src/domain/user-management/application/use-cases/user/fetch-users-with-filtered-options";
 import { User } from "src/domain/user-management/enterprise/entities/base-user";
@@ -54,34 +57,49 @@ export class PrismaUsersRepository implements UsersRepository {
       "page" | "pageSize"
     >,
     paginationParams: PaginationParams,
-  ): Promise<UserWithDetails[]> {
-    const { roles, basesIds, companiesIds, isActive, ids } = options;
+  ): Promise<{
+    users: UserWithDetails[];
+    pagination: PaginationResponseParams;
+  }> {
+    const { roles, basesIds, companiesIds, isActive, ids, name } = options;
     const { page, pageSize } = paginationParams;
 
-    const users = await this.prisma.user.findMany({
-      where: {
-        ...(roles ? { role: { in: roles as UserRole[] } } : {}),
-        ...(basesIds
-          ? { baseId: { in: basesIds.map((id) => id.toString()) } }
-          : {}),
-        ...(companiesIds
-          ? { companyId: { in: companiesIds.map((id) => id.toString()) } }
-          : {}),
-        ...(isActive !== undefined ? { isActive } : {}),
-        ...(ids ? { id: { in: ids.map((id) => id.toString()) } } : {}),
-      },
-      include: {
-        company: true,
-        base: true,
-        avatar: true,
-      },
-      orderBy: {
-        name: "asc",
-      },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    });
+    const whereConditions: Prisma.UserWhereInput = {
+      ...(roles ? { role: { in: roles as UserRole[] } } : {}),
+      ...(basesIds
+        ? { baseId: { in: basesIds.map((id) => id.toString()) } }
+        : {}),
+      ...(companiesIds
+        ? { companyId: { in: companiesIds.map((id) => id.toString()) } }
+        : {}),
+      ...(isActive !== undefined ? { isActive } : {}),
+      ...(ids ? { id: { in: ids.map((id) => id.toString()) } } : {}),
+      ...(name ? { name: { contains: name, mode: "insensitive" } } : {}),
+    };
+    const [totalItems, prismaUsers] = await this.prisma.$transaction([
+      this.prisma.user.count({ where: whereConditions }),
+      this.prisma.user.findMany({
+        where: whereConditions,
+        include: {
+          company: true,
+          base: true,
+          avatar: true,
+        },
+        orderBy: {
+          name: "asc",
+        },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
 
-    return users.map(PrismaUserMapper.toDomainWithDetails);
+    return {
+      users: prismaUsers.map(PrismaUserMapper.toDomainWithDetails),
+      pagination: {
+        actualPage: page,
+        actualPageSize: prismaUsers.length,
+        lastPage: Math.ceil(totalItems / pageSize),
+      },
+    };
   }
 }

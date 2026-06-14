@@ -1,5 +1,8 @@
 import { DomainEvents } from "src/core/events/domain-events";
-import { PaginationParams } from "src/core/repositories/pagination-params";
+import {
+  PaginationParams,
+  PaginationResponseParams,
+} from "src/core/repositories/pagination-params";
 import { UsersRepository } from "src/domain/user-management/application/repositories/users-repository";
 import { FetchUsersWithFilteredOptionsUseCaseRequest } from "src/domain/user-management/application/use-cases/user/fetch-users-with-filtered-options";
 import { User } from "src/domain/user-management/enterprise/entities/base-user";
@@ -59,33 +62,41 @@ export class InMemoryUsersRepository implements UsersRepository {
       "page" | "pageSize"
     >,
     paginationParams: PaginationParams,
-  ): Promise<UserWithDetails[]> {
-    const { roles, basesIds, companiesIds, isActive, ids } = options;
+  ): Promise<{
+    users: UserWithDetails[];
+    pagination: PaginationResponseParams;
+  }> {
+    const { roles, basesIds, companiesIds, isActive, ids, name } = options;
     const { page, pageSize } = paginationParams;
 
-    const foundedUsers = this.items
-      .filter((user) => {
-        if (roles && !roles.includes(user.role.value)) {
-          return false;
-        }
-        if (basesIds && !basesIds.includes(user.baseId.toString())) {
-          return false;
-        }
-        if (companiesIds && !companiesIds.includes(user.companyId.toString())) {
-          return false;
-        }
-        if (isActive !== undefined && user.isActive !== isActive) {
-          return false;
-        }
-        if (ids && !ids.includes(user.id.toString())) {
-          return false;
-        }
-        return true;
-      })
+    const foundedUsers = this.items.filter((user) => {
+      if (roles && !roles.includes(user.role.value)) {
+        return false;
+      }
+      if (name && !user.name.toLowerCase().includes(name.toLowerCase())) {
+        return false;
+      }
+
+      if (basesIds && !basesIds.includes(user.baseId.toString())) {
+        return false;
+      }
+      if (companiesIds && !companiesIds.includes(user.companyId.toString())) {
+        return false;
+      }
+      if (isActive !== undefined && user.isActive !== isActive) {
+        return false;
+      }
+      if (ids && !ids.includes(user.id.toString())) {
+        return false;
+      }
+      return true;
+    });
+
+    const paginatedFoundedUsers = foundedUsers
       .sort((a, b) => a.name.localeCompare(b.name))
       .slice((page - 1) * pageSize, page * pageSize);
 
-    return foundedUsers.map((user) => {
+    const usersWithDetails = paginatedFoundedUsers.map((user) => {
       let avatar: UserAvatar | undefined;
       const company = this.companiesRepository.items.find(
         (company) => company.id.toString() === user.companyId.toString(),
@@ -118,5 +129,14 @@ export class InMemoryUsersRepository implements UsersRepository {
         avatar,
       });
     });
+
+    return {
+      users: usersWithDetails,
+      pagination: {
+        actualPage: page,
+        actualPageSize: paginatedFoundedUsers.length,
+        lastPage: Math.ceil(foundedUsers.length / pageSize),
+      },
+    };
   }
 }

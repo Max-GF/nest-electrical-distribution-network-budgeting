@@ -66,6 +66,14 @@ export const FetchUsersWithFilteredOptionsResponse = () => {
               },
             },
           },
+          pagination: {
+            type: "object",
+            properties: {
+              actualPage: { type: "number", example: 1 },
+              actualPageSize: { type: "number", example: 40 },
+              lastPage: { type: "number", example: 5 },
+            },
+          },
         },
       },
     }),
@@ -91,6 +99,6 @@ export const FetchUsersWithFilteredOptionsResponse = () => {
           statusCode: 422,
         },
       },
-    })
+    }),
   );
 };

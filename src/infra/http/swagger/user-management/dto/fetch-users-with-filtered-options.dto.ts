@@ -1,9 +1,9 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import {
-    IsBooleanString,
-    IsOptional,
-    IsString,
-    Matches,
+  IsBooleanString,
+  IsOptional,
+  IsString,
+  Matches,
 } from "class-validator";
 export class FetchUsersWithFilteredOptionsDto {
   @ApiPropertyOptional({
@@ -13,6 +13,14 @@ export class FetchUsersWithFilteredOptionsDto {
   @IsOptional()
   @IsString()
   roles?: string;
+
+  @ApiPropertyOptional({
+    description: "Filter users by name",
+    example: "John Doe",
+  })
+  @IsOptional()
+  @IsString()
+  name?: string;
 
   @ApiPropertyOptional({
     description: "Comma-separated UUIDs of base IDs",
