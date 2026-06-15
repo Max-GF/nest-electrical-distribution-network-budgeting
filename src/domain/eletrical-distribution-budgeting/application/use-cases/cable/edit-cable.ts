@@ -142,6 +142,13 @@ export class EditCableUseCase {
         ),
       );
     }
+    // Prevent invalid state where unit is M but meterToKgConversionFactor is provided
+    if (
+      cableToEdit.unit === "M" &&
+      cableToEdit.meterToKgConversionFactor !== undefined
+    ) {
+      cableToEdit.meterToKgConversionFactor = undefined;
+    }
 
     if (hasToEdit) {
       await this.cablesRepository.save(cableToEdit);

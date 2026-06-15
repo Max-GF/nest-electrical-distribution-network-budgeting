@@ -95,13 +95,22 @@ export class PrismaCablesRepository implements CablesRepository {
     if (filterOptions.tension) {
       where.tension = filterOptions.tension;
     }
-
+    if (filterOptions.maxSectionAreaInMM || filterOptions.minSectionAreaInMM) {
+      where.sectionAreaInMM = {};
+      if (filterOptions.maxSectionAreaInMM) {
+        where.sectionAreaInMM.lte = filterOptions.maxSectionAreaInMM;
+      }
+      if (filterOptions.minSectionAreaInMM) {
+        where.sectionAreaInMM.gte = filterOptions.minSectionAreaInMM;
+      }
+    }
     const [count, cables] = await Promise.all([
       this.prisma.cable.count({ where }),
       this.prisma.cable.findMany({
         where,
         take: paginationParams.pageSize,
         skip: (paginationParams.page - 1) * paginationParams.pageSize,
+        orderBy: [{ code: "asc" }, { description: "asc" }],
       }),
     ]);
 

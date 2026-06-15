@@ -49,7 +49,13 @@ export class CreateBulkOfCablesController {
     return {
       message: "Cables processed successfully",
       created: created.map(CablePresenter.toHttp),
-      failed,
+      failed: failed.map((f) => ({
+        error: {
+          name: f.error.constructor.name,
+          message: f.error.message,
+        },
+        cable: f.cable,
+      })),
     };
   }
 }

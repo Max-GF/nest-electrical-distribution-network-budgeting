@@ -102,6 +102,16 @@ export class PrismaPoleScrewsRepository implements PoleScrewsRepository {
         mode: "insensitive",
       };
     }
+    if (filterOptions.minLengthInMM || filterOptions.maxLengthInMM) {
+      where.lengthInMM = {};
+
+      if (filterOptions.minLengthInMM) {
+        where.lengthInMM.gte = filterOptions.minLengthInMM;
+      }
+      if (filterOptions.maxLengthInMM) {
+        where.lengthInMM.lte = filterOptions.maxLengthInMM;
+      }
+    }
 
     const [count, poleScrews] = await Promise.all([
       this.prisma.poleScrew.count({ where }),
@@ -109,6 +119,7 @@ export class PrismaPoleScrewsRepository implements PoleScrewsRepository {
         where,
         take: paginationParams.pageSize,
         skip: (paginationParams.page - 1) * paginationParams.pageSize,
+        orderBy: [{ lengthInMM: "asc" }],
       }),
     ]);
 
