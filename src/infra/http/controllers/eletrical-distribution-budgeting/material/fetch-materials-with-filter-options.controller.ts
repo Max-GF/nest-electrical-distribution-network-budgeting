@@ -16,7 +16,13 @@ const fetchMaterialsWithFilterOptionsQuerySchema = z.object({
   codes: z
     .string()
     .optional()
-    .transform((val) => (val ? val.split(",").map(Number) : undefined)),
+    .transform((str) => {
+      if (str === undefined) return undefined;
+      return str
+        .toUpperCase()
+        .split(",")
+        .map((tag) => Number(tag.trim()));
+    }),
   description: z.string().optional(),
   tension: z.string().optional(),
   page: z.coerce.number().optional().default(1),

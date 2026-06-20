@@ -53,7 +53,6 @@ export class FetchCableConnectorsWithFilterOptionsController {
     };
   }> {
     const result = await this.fetchCableConnectors.execute(query);
-    console.log(query.codes);
     if (result.isLeft()) {
       throw new InternalServerErrorException("Unexpected error occurred");
     }

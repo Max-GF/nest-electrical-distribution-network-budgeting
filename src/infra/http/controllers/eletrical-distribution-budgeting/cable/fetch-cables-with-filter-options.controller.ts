@@ -16,12 +16,14 @@ import { z } from "zod";
 
 const fetchCablesQuerySchema = z.object({
   codes: z
-    .union([z.string(), z.array(z.string())])
+    .string()
     .optional()
-    .transform((val) => {
-      if (!val) return undefined;
-      const arr = Array.isArray(val) ? val : [val];
-      return arr.map((code) => Number(code));
+    .transform((str) => {
+      if (str === undefined) return undefined;
+      return str
+        .toUpperCase()
+        .split(",")
+        .map((tag) => Number(tag.trim()));
     }),
   description: z.string().optional(),
   tension: z.string().optional(),
