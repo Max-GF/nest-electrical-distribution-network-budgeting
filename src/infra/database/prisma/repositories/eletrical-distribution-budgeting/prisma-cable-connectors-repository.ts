@@ -93,18 +93,43 @@ export class PrismaCableConnectorsRepository
     cableConnectors: CableConnector[];
     pagination: PaginationResponseParams;
   }> {
+    const {
+      codes,
+      description,
+      entranceMaxValueMM,
+      entranceMinValueMM,
+      exitMaxValueMM,
+      exitMinValueMM,
+    } = filterOptions;
     const where: Prisma.CableConnectorWhereInput = {};
 
-    if (filterOptions.codes) {
-      where.code = { in: filterOptions.codes };
+    if (codes) {
+      where.code = { in: codes };
     }
-    if (filterOptions.description) {
+    if (description) {
       where.description = {
-        contains: filterOptions.description,
+        contains: description,
         mode: "insensitive",
       };
     }
-
+    if (entranceMaxValueMM || entranceMinValueMM) {
+      where.entranceMinValueMM = {};
+      if (entranceMaxValueMM) {
+        where.entranceMinValueMM.lte = entranceMaxValueMM;
+      }
+      if (entranceMinValueMM) {
+        where.entranceMinValueMM.gte = entranceMinValueMM;
+      }
+    }
+    if (exitMaxValueMM || exitMinValueMM) {
+      where.exitMinValueMM = {};
+      if (exitMaxValueMM) {
+        where.exitMinValueMM.lte = exitMaxValueMM;
+      }
+      if (exitMinValueMM) {
+        where.exitMinValueMM.gte = exitMinValueMM;
+      }
+    }
     const [count, cableConnectors] = await Promise.all([
       this.prisma.cableConnector.count({ where }),
       this.prisma.cableConnector.findMany({
