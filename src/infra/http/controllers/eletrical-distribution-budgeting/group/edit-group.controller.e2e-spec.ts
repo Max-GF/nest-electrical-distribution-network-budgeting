@@ -34,9 +34,9 @@ describe("Edit Group (E2E)", () => {
   });
 
   test("[PUT] /groups/:id", async () => {
-    const user = await makeUser();
-    const company = await makeCompany();
-    const base = await makeBase({ companyId: company.id });
+    const user = makeUser();
+    const company = makeCompany();
+    const base = makeBase({ companyId: company.id });
     const accessToken = jwt.sign({
       sub: user.id.toString(),
       companyId: company.id.toString(),
@@ -81,7 +81,7 @@ describe("Edit Group (E2E)", () => {
       group: expect.objectContaining({
         id: group.id.toString(),
         name: "UPDATED GROUP NAME",
-        description: "updated description",
+        description: "UPDATED DESCRIPTION",
         tension: "LOW",
       }),
     });

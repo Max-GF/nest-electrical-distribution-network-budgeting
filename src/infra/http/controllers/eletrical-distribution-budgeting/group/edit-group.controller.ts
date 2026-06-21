@@ -25,17 +25,18 @@ const editGroupItemSchema = z.object({
   groupItemId: z.string().uuid(),
   quantity: z.number().optional(),
   addByPhase: z.number().optional(),
-  description: z.string().optional(),
+  description: z.string().toUpperCase().optional(),
   type: z.enum(["material", "poleScrew", "cableConnector"]).optional(),
   materialId: z.string().uuid().optional(),
   lengthAdd: z.number().optional(),
   localCableSectionInMM: z.number().optional(),
+  oneSideConnector: z.boolean().optional(),
 });
 
 const editGroupSchema = z.object({
-  name: z.string().optional(),
+  name: z.string().toUpperCase().optional(),
   tension: z.string().optional(),
-  description: z.string().optional(),
+  description: z.string().toUpperCase().optional(),
   items: z.array(editGroupItemSchema).optional(),
 });
 
@@ -95,6 +96,7 @@ export class EditGroupController {
             addByPhase: item.addByPhase,
             description: item.description,
             localCableSectionInMM: item.localCableSectionInMM ?? 0,
+            oneSideConnector: item.oneSideConnector ?? false,
           };
         }
       }),

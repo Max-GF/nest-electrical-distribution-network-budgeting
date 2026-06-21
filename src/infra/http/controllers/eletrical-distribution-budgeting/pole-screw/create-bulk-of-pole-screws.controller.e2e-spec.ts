@@ -69,8 +69,8 @@ describe("Create Bulk Of Pole Screws (E2E)", () => {
       });
 
     expect(response.statusCode).toBe(201);
-    expect(response.body.poleScrews).toHaveLength(2);
-    expect(response.body.poleScrews).toEqual(
+    expect(response.body.created).toHaveLength(2);
+    expect(response.body.created).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           code: 12345,

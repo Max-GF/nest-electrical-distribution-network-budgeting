@@ -51,8 +51,19 @@ describe("Edit Group", () => {
       type: "poleScrew",
       lengthAdd: 10,
     });
+    const groupItem3 = makeGroupItem({
+      groupId: group.id,
+      type: "cableConnector",
+      localCableSectionInMM: 10,
+      addByPhase: 3,
+      oneSideConnector: true,
+    });
 
-    await inMemoryGroupItemsRepository.createMany([groupItem1, groupItem2]);
+    await inMemoryGroupItemsRepository.createMany([
+      groupItem1,
+      groupItem2,
+      groupItem3,
+    ]);
 
     // Create materials for validation
     await inMemoryMaterialsRepository.createMany([
@@ -77,6 +88,15 @@ describe("Edit Group", () => {
           quantity: 3,
           localCableSectionInMM: 15,
           description: "new cable connector",
+          oneSideConnector: true,
+        },
+        {
+          groupItemId: groupItem3.id.toString(),
+          type: "cableConnector",
+          quantity: 3,
+          localCableSectionInMM: 15,
+          description: "Edited cable connector- one side false",
+          oneSideConnector: false,
         },
       ],
     });
@@ -93,7 +113,7 @@ describe("Edit Group", () => {
         (item) => item.groupId.toString() === group.id.toString(),
       );
 
-      expect(updatedItems).toHaveLength(3); // One existing updated + one new added
+      expect(updatedItems).toHaveLength(4); // Three existing updated + one new added
       expect(updatedItems[0]).toEqual(
         expect.objectContaining({
           props: expect.objectContaining({
@@ -117,6 +137,19 @@ describe("Edit Group", () => {
             type: "cableConnector",
             localCableSectionInMM: 15,
             quantity: 3,
+            description: "Edited cable connector- one side false",
+            oneSideConnector: false,
+          }),
+        }),
+      );
+      expect(updatedItems[3]).toEqual(
+        expect.objectContaining({
+          props: expect.objectContaining({
+            type: "cableConnector",
+            localCableSectionInMM: 15,
+            quantity: 3,
+            description: "new cable connector",
+            oneSideConnector: true,
           }),
         }),
       );
@@ -205,6 +238,7 @@ describe("Edit Group", () => {
           type: "cableConnector",
           quantity: 3,
           localCableSectionInMM: -5,
+          oneSideConnector: true,
         },
       ],
     });

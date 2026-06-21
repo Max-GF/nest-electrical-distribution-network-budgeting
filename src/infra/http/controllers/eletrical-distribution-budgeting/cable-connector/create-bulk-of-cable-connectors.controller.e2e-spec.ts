@@ -75,8 +75,8 @@ describe("Create Bulk Of Cable Connectors (E2E)", () => {
       });
 
     expect(response.statusCode).toBe(201);
-    expect(response.body.cableConnectors).toHaveLength(2);
-    expect(response.body.cableConnectors).toEqual(
+    expect(response.body.created).toHaveLength(2);
+    expect(response.body.created).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           code: 12345,

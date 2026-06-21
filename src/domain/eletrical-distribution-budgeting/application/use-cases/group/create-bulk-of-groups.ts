@@ -201,7 +201,7 @@ export class CreateBulkOfGroupUseCase {
         tension: TensionLevel.create(
           groupData.tension.toUpperCase() as TensionLevel["value"],
         ),
-        description: groupData.description.toLowerCase(),
+        description: groupData.description,
       });
 
       const { materials, poleScrews, cableConnectors } = this.classifyItems(

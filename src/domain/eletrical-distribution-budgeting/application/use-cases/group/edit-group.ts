@@ -93,7 +93,7 @@ export class EditGroupUseCase {
     }
 
     if (description && description !== groupToEdit.description) {
-      groupToEdit.description = description.toLowerCase();
+      groupToEdit.description = description;
       hasToEdit.group = true;
     }
     if (tension && tension.toUpperCase() !== groupToEdit.tension.value) {
@@ -300,6 +300,7 @@ export class EditGroupUseCase {
           addByPhase: cableConnector.addByPhase,
           description: cableConnector.description,
           type: "cableConnector",
+          oneSideConnector: cableConnector.oneSideConnector,
         },
         new UniqueEntityID(cableConnector.groupItemId),
       );

@@ -77,6 +77,7 @@ describe("Create Group", () => {
           localCableSectionInMM: 10,
           addByPhase: 3,
           description: "Material destinated to testing 4",
+          oneSideConnector: true,
         },
       ],
     });
@@ -120,6 +121,7 @@ describe("Create Group", () => {
             type: "cableConnector",
             localCableSectionInMM: 10,
             addByPhase: 3,
+            oneSideConnector: true,
           }),
         }),
       );
@@ -173,6 +175,7 @@ describe("Create Group", () => {
           localCableSectionInMM: -10,
           addByPhase: 3,
           description: "Material destinated to testing 4",
+          oneSideConnector: true,
         },
       ],
     });
@@ -214,6 +217,7 @@ describe("Create Group", () => {
           localCableSectionInMM: 10,
           addByPhase: 3,
           description: "Material destinated to testing 4",
+          oneSideConnector: true,
         },
       ],
     });

@@ -24,17 +24,18 @@ import { CreateGroupResponse } from "../../../swagger/eletrical-distribution-bud
 const createGroupItemSchema = z.object({
   quantity: z.number(),
   addByPhase: z.number().optional(),
-  description: z.string().optional(),
+  description: z.string().toUpperCase().optional(),
   type: z.enum(["material", "poleScrew", "cableConnector"]),
   materialId: z.string().uuid().optional(),
   lengthAdd: z.number().optional(),
   localCableSectionInMM: z.number().optional(),
+  oneSideConnector: z.boolean().optional(),
 });
 
 const createGroupSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).toUpperCase(),
   tension: z.string().min(1),
-  description: z.string().min(1),
+  description: z.string().min(1).toUpperCase(),
   items: z.array(createGroupItemSchema),
 });
 
@@ -88,6 +89,7 @@ export class CreateGroupController {
             addByPhase: item.addByPhase,
             description: item.description,
             localCableSectionInMM: item.localCableSectionInMM ?? 0,
+            oneSideConnector: item.oneSideConnector ?? false,
           };
         }
       }),

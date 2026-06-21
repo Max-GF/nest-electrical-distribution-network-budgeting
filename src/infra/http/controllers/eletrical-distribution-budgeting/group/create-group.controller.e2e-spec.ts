@@ -68,7 +68,7 @@ describe("Create Group (E2E)", () => {
     expect(response.body).toEqual({
       group: expect.objectContaining({
         name: "GROUP 1",
-        description: "group description",
+        description: "GROUP DESCRIPTION",
         tension: "MEDIUM",
       }),
     });

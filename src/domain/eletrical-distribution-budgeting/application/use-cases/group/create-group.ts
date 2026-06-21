@@ -36,6 +36,7 @@ export interface GroupPoleScrewRequest extends BaseGroupItemRequest {
 export interface GroupCableConnectorRequest extends BaseGroupItemRequest {
   type: "cableConnector";
   localCableSectionInMM: number;
+  oneSideConnector: boolean;
 }
 
 // Tipo união para todos os possíveis itens
@@ -102,7 +103,7 @@ export class CreateGroupUseCase {
     const group = Group.create({
       name: name.toUpperCase(),
       tension: TensionLevel.create(upperCasedTension),
-      description: description.toLowerCase(),
+      description: description,
     });
 
     // Criar os GroupItems
@@ -231,6 +232,7 @@ export class CreateGroupUseCase {
         addByPhase: cableConnector.addByPhase,
         description: cableConnector.description,
         type: "cableConnector",
+        oneSideConnector: cableConnector.oneSideConnector,
       });
       groupItems.push(groupItem);
     });

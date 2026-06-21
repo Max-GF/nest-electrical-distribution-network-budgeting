@@ -89,12 +89,12 @@ describe("Create Bulk Of Groups (E2E)", () => {
       expect.arrayContaining([
         expect.objectContaining({
           name: "GROUP 1",
-          description: "group 1 description",
+          description: "Group 1 Description",
           tension: "MEDIUM",
         }),
         expect.objectContaining({
           name: "GROUP 2",
-          description: "group 2 description",
+          description: "Group 2 Description",
           tension: "LOW",
         }),
       ]),
