@@ -26,6 +26,7 @@ export class InMemoryGroupsRepository implements GroupsRepository {
     group: Group,
     itemsToCreate: GroupItem[],
     itemsToEdit: GroupItem[],
+    itemsToRemoveIds: string[],
   ): Promise<void> {
     const groupIndex = this.items.findIndex((item) => item.id === group.id);
 
@@ -33,6 +34,10 @@ export class InMemoryGroupsRepository implements GroupsRepository {
       this.items[groupIndex] = group;
       await this.groupItemsRepository.createMany(itemsToCreate);
       await this.groupItemsRepository.updateMany(itemsToEdit);
+      await this.groupItemsRepository.removeByIdsAndGroupId({
+        groupId: group.id.toString(),
+        ids: itemsToRemoveIds,
+      });
     }
   }
   async findById(id: string): Promise<Group | null> {

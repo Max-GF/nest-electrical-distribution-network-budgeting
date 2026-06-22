@@ -110,4 +110,14 @@ export class EditGroupDto {
   @ValidateNested({ each: true })
   @Type(() => EditGroupItemDto)
   items?: EditGroupItemDto[];
+
+  @ApiPropertyOptional({
+    description: "IDs of group items to remove",
+    type: [String],
+    example: ["uuid-1", "uuid-2"],
+  })
+  @IsArray()
+  @IsOptional()
+  @IsUUID("4", { each: true })
+  itemsToRemoveIds?: string[];
 }

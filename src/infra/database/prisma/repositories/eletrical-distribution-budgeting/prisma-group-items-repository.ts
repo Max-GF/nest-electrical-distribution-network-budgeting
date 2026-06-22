@@ -116,4 +116,17 @@ export class PrismaGroupItemsRepository implements GroupItemsRepository {
       },
     });
   }
+
+  async removeByIdsAndGroupId(options: {
+    groupId: string;
+    ids: string[];
+  }): Promise<void> {
+    const { groupId, ids } = options;
+    await this.prisma.groupItem.deleteMany({
+      where: {
+        groupId,
+        id: { in: ids },
+      },
+    });
+  }
 }

@@ -11,6 +11,10 @@ export interface FetchGroupItemsFilterOptions {
 export abstract class GroupItemsRepository {
   abstract createMany(groupitems: GroupItem[]): Promise<void>;
   abstract updateMany(groupitems: GroupItem[]): Promise<void>;
+  abstract removeByIdsAndGroupId(options: {
+    groupId: string;
+    ids: string[];
+  }): Promise<void>;
   abstract findById(id: string): Promise<GroupItem | null>;
   abstract findByGroupId(groupId: string): Promise<GroupItem[]>;
   abstract findByManyGroupsIds(groupsIds: string[]): Promise<GroupItem[]>;

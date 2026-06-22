@@ -30,6 +30,7 @@ export abstract class GroupsRepository {
     group: Group,
     itemsToCreate: GroupItem[],
     itemsToEdit: GroupItem[],
+    itemsToRemoveIds: string[],
   ): Promise<void>;
 
   abstract fetchGroupWithDetailedItems(

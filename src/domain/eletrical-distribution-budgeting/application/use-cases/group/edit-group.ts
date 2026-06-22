@@ -22,6 +22,7 @@ export interface EditGroupUseCaseRequest {
   tension?: string;
   description?: string;
   items?: GroupItemsToEdit[];
+  itemsToRemoveIds?: string[];
 }
 
 interface EditGroupMaterialRequest extends GroupMaterialRequest {
@@ -42,7 +43,7 @@ type GroupItemsToEdit =
   | EditGroupCableConnectorRequest;
 
 type EditGroupUseCaseResponse = Either<
-  ResourceNotFoundError | NotAllowedError,
+  ResourceNotFoundError | NotAllowedError | AlreadyRegisteredError,
   {
     group: Group;
   }
@@ -62,6 +63,7 @@ export class EditGroupUseCase {
     const hasToEdit = { group: false, items: false };
     let updatedItems: GroupItem[] = [];
     let newItems: GroupItem[] = [];
+    const actualGroupItemsIdsSet = new Set<string>();
     if (this.noEntries(editRequest)) {
       return left(
         new NotAllowedError(
@@ -69,7 +71,14 @@ export class EditGroupUseCase {
         ),
       );
     }
-    const { groupToEditId, description, name, tension, items } = editRequest;
+    const {
+      groupToEditId,
+      description,
+      name,
+      tension,
+      items,
+      itemsToRemoveIds,
+    } = editRequest;
 
     const groupToEdit = await this.groupsRepository.findById(groupToEditId);
     if (!groupToEdit) {
@@ -131,9 +140,9 @@ export class EditGroupUseCase {
         poleScrews,
         cableConnectors,
       );
-      const actualGroupItemsIdsSet = new Set(
-        actualGroupItems.map((item) => item.id.toString()),
-      );
+      actualGroupItems.forEach((item) => {
+        actualGroupItemsIdsSet.add(item.id.toString());
+      });
       const missingItems = itemsToEdit.filter(
         (item) => !actualGroupItemsIdsSet.has(item.id.toString()),
       );
@@ -151,6 +160,38 @@ export class EditGroupUseCase {
       updatedItems = itemsToEdit;
     }
 
+    let filteredRemoveIds: string[] = [];
+    if (itemsToRemoveIds && itemsToRemoveIds.length > 0) {
+      const editIds = new Set(
+        (items ?? [])
+          .map((item) => (item as { groupItemId?: string }).groupItemId)
+          .filter((id): id is string => !!id),
+      );
+
+      filteredRemoveIds = itemsToRemoveIds.filter((id) => !editIds.has(id));
+
+      if (filteredRemoveIds.length > 0) {
+        if (actualGroupItemsIdsSet.size === 0) {
+          const actualGroupItems =
+            await this.groupItemsRepository.findByGroupId(groupToEditId);
+          actualGroupItems.forEach((item) =>
+            actualGroupItemsIdsSet.add(item.id.toString()),
+          );
+        }
+        const invalidRemoveIds = filteredRemoveIds.filter(
+          (id) => !actualGroupItemsIdsSet.has(id),
+        );
+        if (invalidRemoveIds.length > 0) {
+          return left(
+            new NotAllowedError(
+              `The following item IDs do not belong to the given group and cannot be removed: ${invalidRemoveIds.join(", ")}.`,
+            ),
+          );
+        }
+        hasToEdit.items = true;
+      }
+    }
+
     if (!hasToEdit.group && !hasToEdit.items) {
       return left(
         new NotAllowedError(
@@ -163,6 +204,7 @@ export class EditGroupUseCase {
       groupToEdit,
       newItems,
       updatedItems,
+      filteredRemoveIds,
     );
 
     return right({

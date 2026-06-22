@@ -351,6 +351,161 @@ describe("Edit Group", () => {
     }
   });
 
+  it("should be able to remove items from a group", async () => {
+    const group = makeGroup();
+    await inMemoryGroupsRepository.createMany([group]);
+
+    const groupItem1 = makeGroupItem({
+      groupId: group.id,
+      type: "material",
+      materialId: new UniqueEntityID("material-1"),
+    });
+    const groupItem2 = makeGroupItem({
+      groupId: group.id,
+      type: "poleScrew",
+      lengthAdd: 10,
+    });
+    await inMemoryGroupItemsRepository.createMany([groupItem1, groupItem2]);
+
+    const result = await sut.execute({
+      groupToEditId: group.id.toString(),
+      itemsToRemoveIds: [groupItem1.id.toString()],
+    });
+
+    expect(result.isRight()).toBeTruthy();
+    const remainingItems = inMemoryGroupItemsRepository.items.filter(
+      (item) => item.groupId.toString() === group.id.toString(),
+    );
+    expect(remainingItems).toHaveLength(1);
+    expect(remainingItems[0].id.toString()).toBe(groupItem2.id.toString());
+  });
+
+  it("should be able to remove and edit items at the same time", async () => {
+    const group = makeGroup();
+    await inMemoryGroupsRepository.createMany([group]);
+
+    await inMemoryMaterialsRepository.createMany([
+      makeMaterial({}, new UniqueEntityID("material-1")),
+      makeMaterial({}, new UniqueEntityID("material-2")),
+    ]);
+
+    const groupItem1 = makeGroupItem({
+      groupId: group.id,
+      type: "material",
+      materialId: new UniqueEntityID("material-1"),
+    });
+    const groupItem2 = makeGroupItem({
+      groupId: group.id,
+      type: "poleScrew",
+      lengthAdd: 10,
+    });
+    await inMemoryGroupItemsRepository.createMany([groupItem1, groupItem2]);
+
+    const result = await sut.execute({
+      groupToEditId: group.id.toString(),
+      itemsToRemoveIds: [groupItem2.id.toString()],
+      items: [
+        {
+          type: "material",
+          materialId: "material-2",
+          quantity: 3,
+          groupItemId: groupItem1.id.toString(),
+        },
+      ],
+    });
+
+    expect(result.isRight()).toBeTruthy();
+    const remainingItems = inMemoryGroupItemsRepository.items.filter(
+      (item) => item.groupId.toString() === group.id.toString(),
+    );
+    expect(remainingItems).toHaveLength(1);
+    expect(remainingItems[0].id.toString()).toBe(groupItem1.id.toString());
+    expect(remainingItems[0].materialId?.toString()).toBe("material-2");
+    expect(remainingItems[0].quantity).toBe(3);
+  });
+
+  it("should ignore id in remove list when it is also in edit list", async () => {
+    const group = makeGroup();
+    await inMemoryGroupsRepository.createMany([group]);
+
+    await inMemoryMaterialsRepository.createMany([
+      makeMaterial({}, new UniqueEntityID("material-1")),
+      makeMaterial({}, new UniqueEntityID("material-2")),
+    ]);
+
+    const groupItem1 = makeGroupItem({
+      groupId: group.id,
+      type: "material",
+      materialId: new UniqueEntityID("material-1"),
+      quantity: 1,
+    });
+    await inMemoryGroupItemsRepository.createMany([groupItem1]);
+
+    // Send same ID in both remove and edit — edit must win
+    const result = await sut.execute({
+      groupToEditId: group.id.toString(),
+      itemsToRemoveIds: [groupItem1.id.toString()],
+      items: [
+        {
+          type: "material",
+          materialId: "material-2",
+          quantity: 9,
+          groupItemId: groupItem1.id.toString(),
+        },
+      ],
+    });
+
+    expect(result.isRight()).toBeTruthy();
+    const remainingItems = inMemoryGroupItemsRepository.items.filter(
+      (item) => item.groupId.toString() === group.id.toString(),
+    );
+    // Item must still exist (not removed) and be updated
+    expect(remainingItems).toHaveLength(1);
+    expect(remainingItems[0].materialId?.toString()).toBe("material-2");
+    expect(remainingItems[0].quantity).toBe(9);
+  });
+
+  it("should not be able to remove items that do not belong to the group or are non-existent", async () => {
+    const group1 = makeGroup();
+    const group2 = makeGroup();
+    await inMemoryGroupsRepository.createMany([group1, group2]);
+
+    const group2Item = makeGroupItem({
+      groupId: group2.id,
+      type: "poleScrew",
+      lengthAdd: 5,
+    });
+    await inMemoryGroupItemsRepository.createMany([group2Item]);
+
+    // Try to remove an item from group2 while editing group1
+    const result1 = await sut.execute({
+      groupToEditId: group1.id.toString(),
+      itemsToRemoveIds: [group2Item.id.toString()],
+    });
+
+    expect(result1.isLeft()).toBeTruthy();
+    if (result1.isLeft()) {
+      expect(result1.value).toBeInstanceOf(NotAllowedError);
+      expect(result1.value.message).toContain(
+        "do not belong to the given group and cannot be removed",
+      );
+    }
+
+    // Try to remove a completely non-existent ID
+    const result2 = await sut.execute({
+      groupToEditId: group1.id.toString(),
+      itemsToRemoveIds: ["non-existent-item-id"],
+    });
+
+    expect(result2.isLeft()).toBeTruthy();
+    if (result2.isLeft()) {
+      expect(result2.value).toBeInstanceOf(NotAllowedError);
+      expect(result2.value.message).toContain(
+        "do not belong to the given group and cannot be removed",
+      );
+    }
+  });
+
   it("should be able to handle partial edits", async () => {
     const group = makeGroup({
       name: "ORIGINAL NAME",

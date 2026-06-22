@@ -180,4 +180,17 @@ export class InMemoryGroupItemsRepository implements GroupItemsRepository {
     );
     return foundedGroupItems;
   }
+  async removeByIdsAndGroupId(options: {
+    groupId: string;
+    ids: string[];
+  }): Promise<void> {
+    const { groupId, ids } = options;
+    const idsSet = new Set(ids);
+    this.items = this.items.filter(
+      (item) =>
+        !(
+          item.groupId.toString() === groupId && idsSet.has(item.id.toString())
+        ),
+    );
+  }
 }

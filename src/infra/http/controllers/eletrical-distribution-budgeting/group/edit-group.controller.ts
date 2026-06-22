@@ -22,7 +22,7 @@ import { GroupPresenter } from "../../../presenters/eletrical-distribution-budge
 import { CreateGroupResponse } from "../../../swagger/eletrical-distribution-budgeting/responses/group/create-group.response";
 
 const editGroupItemSchema = z.object({
-  groupItemId: z.string().uuid(),
+  groupItemId: z.string().uuid().optional(),
   quantity: z.number().optional(),
   addByPhase: z.number().optional(),
   description: z.string().toUpperCase().optional(),
@@ -38,6 +38,7 @@ const editGroupSchema = z.object({
   tension: z.string().optional(),
   description: z.string().toUpperCase().optional(),
   items: z.array(editGroupItemSchema).optional(),
+  itemsToRemoveIds: z.array(z.string().uuid()).optional(),
 });
 
 type EditGroupSchema = z.infer<typeof editGroupSchema>;
@@ -62,13 +63,14 @@ export class EditGroupController {
     @Param("id") id: string,
     @Body(new ZodValidationPipe(editGroupSchema)) body: EditGroupSchema,
   ) {
-    const { name, description, tension, items } = body;
+    const { name, description, tension, items, itemsToRemoveIds } = body;
 
     const result = await this.editGroup.execute({
       groupToEditId: id,
       name,
       description,
       tension,
+      itemsToRemoveIds,
       items: items?.map((item) => {
         if (item.type === "material") {
           return {

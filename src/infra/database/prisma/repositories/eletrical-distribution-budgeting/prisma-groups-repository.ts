@@ -113,6 +113,7 @@ export class PrismaGroupsRepository implements GroupsRepository {
     group: Group,
     itemsToCreate: GroupItem[],
     itemsToEdit: GroupItem[],
+    itemsToRemoveIds: string[],
   ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       const groupData = PrismaGroupMapper.toPrisma(group);
@@ -132,6 +133,15 @@ export class PrismaGroupsRepository implements GroupsRepository {
         await tx.groupItem.update({
           where: { id: itemData.id },
           data: itemData,
+        });
+      }
+
+      if (itemsToRemoveIds.length > 0) {
+        await tx.groupItem.deleteMany({
+          where: {
+            groupId: groupData.id,
+            id: { in: itemsToRemoveIds },
+          },
         });
       }
     });
@@ -211,6 +221,7 @@ export class PrismaGroupsRepository implements GroupsRepository {
             include: {
               material: true,
             },
+            orderBy: [{ materialId: "asc" }, { type: "asc" }],
           },
         },
       }),
