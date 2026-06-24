@@ -1,25 +1,24 @@
 import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "src/core/either";
-import { NegativeCableSectionError } from "src/core/errors/erros-eletrical-distribution-budgeting/negative-cable-section-length-error";
+import { UniqueEntityID } from "src/core/entities/unique-entity-id";
 import { AlreadyRegisteredError } from "src/core/errors/generics/already-registered-error";
 import { NotAllowedError } from "src/core/errors/generics/not-allowed-error";
+import { ResourceNotFoundError } from "src/core/errors/generics/resource-not-found-error";
 import { CableConnector } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/cable-connector";
 import { CableConnectorsRepository } from "../../repositories/cable-connectors-repository";
+import { CablesRepository } from "../../repositories/cables-repository";
 
 export interface CreateCableConnectorUseCaseRequest {
   code: number;
   description: string;
   unit: string;
 
-  entranceMinValueMM: number;
-  entranceMaxValueMM: number;
-
-  exitMinValueMM: number;
-  exitMaxValueMM: number;
+  entranceCablesOptionsIds: string[];
+  exitCablesOptionsIds?: string[];
 }
 
 type CreateCableConnectorUseCaseResponse = Either<
-  AlreadyRegisteredError | NegativeCableSectionError,
+  AlreadyRegisteredError | ResourceNotFoundError | NotAllowedError,
   {
     cableConnector: CableConnector;
   }
@@ -27,15 +26,23 @@ type CreateCableConnectorUseCaseResponse = Either<
 
 @Injectable()
 export class CreateCableConnectorUseCase {
-  constructor(private cableConnectorsRepository: CableConnectorsRepository) {}
+  constructor(
+    private cableConnectorsRepository: CableConnectorsRepository,
+    private cablesRepository: CablesRepository,
+  ) {}
 
   async execute(
     cableConnectorToCreate: CreateCableConnectorUseCaseRequest,
   ): Promise<CreateCableConnectorUseCaseResponse> {
-    if (this.oneLengthInfoIsLessThanZero(cableConnectorToCreate)) {
+    if (cableConnectorToCreate.code <= 0) {
       return left(
-        new NegativeCableSectionError(
-          "Cable Connector entrance and exit section lengths must be greater than or equal to zero.",
+        new NotAllowedError("Cable Connector code must be greater than zero"),
+      );
+    }
+    if (cableConnectorToCreate.entranceCablesOptionsIds.length === 0) {
+      return left(
+        new NotAllowedError(
+          "Cable Connector must have at least one entrance cable option",
         ),
       );
     }
@@ -43,25 +50,10 @@ export class CreateCableConnectorUseCase {
       code,
       description,
       unit,
-      entranceMaxValueMM,
-      entranceMinValueMM,
-      exitMaxValueMM,
-      exitMinValueMM,
+      entranceCablesOptionsIds,
+      exitCablesOptionsIds,
     } = cableConnectorToCreate;
-    if (entranceMinValueMM > entranceMaxValueMM) {
-      return left(
-        new NotAllowedError(
-          "Entrace maximum value must be greater than entrance minimum value",
-        ),
-      );
-    }
-    if (exitMinValueMM > exitMaxValueMM) {
-      return left(
-        new NotAllowedError(
-          "Exit maximum value must be greater than exit minimum value",
-        ),
-      );
-    }
+
     const cableConnectorWithSameCode =
       await this.cableConnectorsRepository.findByCode(code);
     if (cableConnectorWithSameCode) {
@@ -69,28 +61,36 @@ export class CreateCableConnectorUseCase {
         new AlreadyRegisteredError("Cable Connector code already registered"),
       );
     }
+    const cablesIds = new Set([
+      ...entranceCablesOptionsIds,
+      ...(exitCablesOptionsIds || []),
+    ]);
+    const cables = await this.cablesRepository.findByIds(Array.from(cablesIds));
+    const registeredCablesIds = new Set(cables.map((c) => c.id.toString()));
+    const missingCablesIds = Array.from(cablesIds).filter(
+      (id) => !registeredCablesIds.has(id),
+    );
+    if (missingCablesIds.length > 0) {
+      return left(
+        new ResourceNotFoundError(
+          `Some cable ids are not registered: ${missingCablesIds.join(", ")}`,
+        ),
+      );
+    }
 
     const cableConnector = CableConnector.create({
       code,
       description: description.toUpperCase(),
       unit: unit.toUpperCase(),
-      entranceMinValueMM,
-      entranceMaxValueMM,
-      exitMinValueMM,
-      exitMaxValueMM,
+      entranceCablesOptionsIds: entranceCablesOptionsIds.map(
+        (id) => new UniqueEntityID(id),
+      ),
+      exitCablesOptionsIds:
+        exitCablesOptionsIds?.map((id) => new UniqueEntityID(id)) || [],
     });
     await this.cableConnectorsRepository.createMany([cableConnector]);
     return right({
       cableConnector,
     });
-  }
-  oneLengthInfoIsLessThanZero(
-    cableConnectorToCreate: CreateCableConnectorUseCaseRequest,
-  ): boolean {
-    return Object.entries(cableConnectorToCreate)
-      .filter(
-        ([key]) => key !== "code" && key !== "description" && key !== "unit",
-      )
-      .some(([, value]) => value < 0);
   }
 }

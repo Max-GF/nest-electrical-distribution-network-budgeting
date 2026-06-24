@@ -6,11 +6,11 @@ export interface CableConnectorProps {
   description: string;
   unit: string;
 
-  entranceMinValueMM: number;
-  entranceMaxValueMM: number;
-
-  exitMinValueMM: number;
-  exitMaxValueMM: number;
+  entranceCablesOptionsIds: UniqueEntityID[];
+  // Optional because some connectors only serves
+  // to hold one cable, not to connect two cables,
+  // like the ones used in the end of a cable.
+  exitCablesOptionsIds?: UniqueEntityID[];
 }
 
 export class CableConnector extends Entity<CableConnectorProps> {
@@ -33,28 +33,51 @@ export class CableConnector extends Entity<CableConnectorProps> {
   set unit(unit: string) {
     this.props.unit = unit;
   }
-  get entranceMinValueMM(): number {
-    return this.props.entranceMinValueMM;
+  get entranceCablesOptionsIds(): UniqueEntityID[] {
+    return this.props.entranceCablesOptionsIds;
   }
-  set entranceMinValueMM(value: number) {
-    this.props.entranceMinValueMM = value;
+  get exitCablesOptionsIds(): UniqueEntityID[] | undefined {
+    return this.props.exitCablesOptionsIds;
   }
-  get entranceMaxValueMM(): number {
-    return this.props.entranceMaxValueMM;
+
+  updateEntranceCable(optionIds: UniqueEntityID[]): {
+    added: UniqueEntityID[];
+    removed: UniqueEntityID[];
+  } {
+    const actualIds = new Set(
+      this.props.entranceCablesOptionsIds.map((id) => id.toString()),
+    );
+    const newIds = new Set(optionIds.map((id) => id.toString()));
+
+    const added = optionIds.filter((id) => !actualIds.has(id.toString()));
+    const removed = this.props.entranceCablesOptionsIds.filter(
+      (id) => !newIds.has(id.toString()),
+    );
+
+    this.props.entranceCablesOptionsIds = optionIds;
+
+    return { added, removed };
   }
-  set entranceMaxValueMM(value: number) {
-    this.props.entranceMaxValueMM = value;
-  }
-  get exitMinValueMM(): number {
-    return this.props.exitMinValueMM;
-  }
-  set exitMinValueMM(value: number) {
-    this.props.exitMinValueMM = value;
-  }
-  get exitMaxValueMM(): number {
-    return this.props.exitMaxValueMM;
-  }
-  set exitMaxValueMM(value: number) {
-    this.props.exitMaxValueMM = value;
+
+  updateExitCable(optionIds: UniqueEntityID[]): {
+    added: UniqueEntityID[];
+    removed: UniqueEntityID[];
+  } {
+    if (!this.props.exitCablesOptionsIds) {
+      this.props.exitCablesOptionsIds = [];
+    }
+    const actualIds = new Set(
+      this.props.exitCablesOptionsIds.map((id) => id.toString()),
+    );
+    const newIds = new Set(optionIds.map((id) => id.toString()));
+
+    const added = optionIds.filter((id) => !actualIds.has(id.toString()));
+    const removed = this.props.exitCablesOptionsIds.filter(
+      (id) => !newIds.has(id.toString()),
+    );
+
+    this.props.exitCablesOptionsIds = optionIds;
+
+    return { added, removed };
   }
 }

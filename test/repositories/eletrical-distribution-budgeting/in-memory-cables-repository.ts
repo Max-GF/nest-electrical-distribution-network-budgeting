@@ -81,4 +81,9 @@ export class InMemoryCablesRepository implements CablesRepository {
     );
     return foundCables;
   }
+
+  async findByCodes(codes: number[]): Promise<Cable[]> {
+    const foundCables = this.items.filter((item) => codes.includes(item.code));
+    return foundCables;
+  }
 }

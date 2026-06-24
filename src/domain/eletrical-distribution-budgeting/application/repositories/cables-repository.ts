@@ -19,6 +19,7 @@ export abstract class CablesRepository {
   abstract findById(id: string): Promise<Cable | null>;
   abstract findByIds(ids: string[]): Promise<Cable[]>;
   abstract findByCode(code: number): Promise<Cable | null>;
+  abstract findByCodes(codes: number[]): Promise<Cable[]>;
   abstract findAllCodes(): Promise<number[]>;
   abstract fetchWithFilter(
     filterOptions: FetchCablesFilterOptions,

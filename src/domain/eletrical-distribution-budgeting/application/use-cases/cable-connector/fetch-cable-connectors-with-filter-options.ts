@@ -9,12 +9,6 @@ interface FetchWithFilterCableConnectorUseCaseRequest {
   codes?: number[];
   description?: string;
 
-  entranceMinValueMM?: number;
-  entranceMaxValueMM?: number;
-
-  exitMinValueMM?: number;
-  exitMaxValueMM?: number;
-
   page?: number;
   pageSize?: number;
 }
@@ -32,52 +26,38 @@ export class FetchWithFilterCableConnectorUseCase {
   constructor(private cableConnectorsRepository: CableConnectorsRepository) {}
 
   async execute(
-    fetchCableConnectorsFilterOptions: FetchWithFilterCableConnectorUseCaseRequest,
+    request: FetchWithFilterCableConnectorUseCaseRequest,
   ): Promise<FetchWithFilterCableConnectorUseCaseResponse> {
-    if (this.oneLengthInfoIsLessThanZero(fetchCableConnectorsFilterOptions)) {
-      return left(
-        new NotAllowedError(
-          "Entrance and exit values must be greater than or equal to zero.",
-        ),
-      );
+    const { codes, description, page, pageSize } = request;
+
+    if (page !== undefined && page <= 0) {
+      return left(new NotAllowedError("Page must be greater than zero"));
     }
-    const {
-      codes,
-      description,
-      entranceMinValueMM,
-      entranceMaxValueMM,
-      exitMinValueMM,
-      exitMaxValueMM,
-      page,
-      pageSize,
-    } = fetchCableConnectorsFilterOptions;
+
+    if (pageSize !== undefined && pageSize <= 0) {
+      return left(new NotAllowedError("Page size must be greater than zero"));
+    }
+
+    const filterCodes = codes?.length ? codes : undefined;
+    const filterDescription = description?.trim()
+      ? description.trim().toUpperCase()
+      : undefined;
+
     const { cableConnectors, pagination } =
       await this.cableConnectorsRepository.fetchWithFilter(
         {
-          codes,
-          description: description?.toUpperCase(),
-          entranceMinValueMM,
-          entranceMaxValueMM,
-          exitMinValueMM,
-          exitMaxValueMM,
+          codes: filterCodes,
+          description: filterDescription,
         },
         {
           page: page ?? 1,
           pageSize: pageSize ?? 40,
         },
       );
+
     return right({
       cableConnectors,
       pagination,
     });
-  }
-  oneLengthInfoIsLessThanZero(
-    fetchCableConnectorsFilterOptions: FetchWithFilterCableConnectorUseCaseRequest,
-  ): boolean {
-    return Object.entries(fetchCableConnectorsFilterOptions)
-      .filter(
-        ([key]) => !["page", "pageSize", "codes", "description"].includes(key),
-      )
-      .some(([, value]) => value < 0);
   }
 }
