@@ -1,4 +1,5 @@
 import { NotAllowedError } from "src/core/errors/generics/not-allowed-error";
+import { Cable } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/cable";
 import { Group } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/group";
 import { GroupItem } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/group-item";
 import { Material } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/material";
@@ -9,9 +10,11 @@ import {
   GroupPoleScrewWithDetailsProps,
 } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/group-item-with-details";
 import { TensionLevel } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
+import { makeCable } from "test/factories/eletrical-distribution-budgeting/make-cable";
 import { makeGroup } from "test/factories/eletrical-distribution-budgeting/make-group";
 import { makeGroupItem } from "test/factories/eletrical-distribution-budgeting/make-group-item";
 import { makeMaterial } from "test/factories/eletrical-distribution-budgeting/make-material";
+import { InMemoryCablesRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-cables-repository";
 import { InMemoryGroupItemsRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-group-items-repository";
 import { InMemoryGroupsRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-groups-repository";
 import { InMemoryMaterialsRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-materials-repository";
@@ -20,13 +23,16 @@ import { FetchGroupUseCase } from "./fetch-groups-with-filter-options";
 let inMemoryGroupItemsRepository: InMemoryGroupItemsRepository;
 let inMemoryGroupsRepository: InMemoryGroupsRepository;
 let inMemoryMaterialsRepository: InMemoryMaterialsRepository;
+let inMemoryCablesRepository: InMemoryCablesRepository;
 let sut: FetchGroupUseCase;
 
 describe("Fetch groups with options", () => {
   beforeEach(() => {
     inMemoryMaterialsRepository = new InMemoryMaterialsRepository();
+    inMemoryCablesRepository = new InMemoryCablesRepository();
     inMemoryGroupItemsRepository = new InMemoryGroupItemsRepository(
       inMemoryMaterialsRepository,
+      inMemoryCablesRepository,
     );
     inMemoryGroupsRepository = new InMemoryGroupsRepository(
       inMemoryGroupItemsRepository,
@@ -84,12 +90,21 @@ describe("Fetch groups with options", () => {
       .filter((item) => item.isMaterial())
       .map((item) => makeMaterial({}, item.materialId));
 
+    const itemsCables = groupsItemsToCreate.reduce((acc: Cable[], item) => {
+      if (item.isCableConnector() && item.localCableId) {
+        acc.push(makeCable({}, item.localCableId));
+      }
+      return acc;
+    }, []);
+
     await Promise.all([
       inMemoryMaterialsRepository.createMany(itemsMaterials),
+      inMemoryCablesRepository.createMany(itemsCables),
       inMemoryGroupItemsRepository.createMany(groupsItemsToCreate),
       inMemoryGroupsRepository.createMany(groupsToCreate),
     ]);
     expect(inMemoryMaterialsRepository.items.length).greaterThanOrEqual(0);
+    expect(inMemoryCablesRepository.items.length).greaterThanOrEqual(0);
     expect(inMemoryGroupItemsRepository.items).toHaveLength(600);
     expect(inMemoryGroupsRepository.items).toHaveLength(120);
 

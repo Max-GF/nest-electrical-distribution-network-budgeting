@@ -1,6 +1,7 @@
 import { UniqueEntityID } from "src/core/entities/unique-entity-id";
 import { ValueObject } from "src/core/entities/value-object";
 import { Optional } from "src/core/types/optional";
+import { Cable } from "../cable";
 import {
   GroupCableConnectorProps,
   GroupMaterialProps,
@@ -18,8 +19,9 @@ export interface GroupPoleScrewWithDetailsProps extends GroupPoleScrewProps {
 }
 
 export interface GroupCableConnectorWithDetailsProps
-  extends GroupCableConnectorProps {
+  extends Omit<GroupCableConnectorProps, "localCableId"> {
   groupItemId: UniqueEntityID;
+  localCable?: Cable;
 }
 
 export type GroupItemWithDetailsProps =
@@ -116,9 +118,9 @@ export class GroupItemWithDetails<
     return this.props.type === "cableConnector";
   }
 
-  get localCableId(): UniqueEntityID | undefined {
+  get localCable(): Cable | undefined {
     if (this.isCableConnector()) {
-      return this.props.localCableId;
+      return this.props.localCable;
     }
     throw new Error(
       "This GroupItemWithDetails is not of type 'cableConnector'",

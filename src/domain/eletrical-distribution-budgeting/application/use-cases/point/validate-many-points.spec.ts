@@ -40,6 +40,7 @@ describe("Validate Many Points Use Case", () => {
     );
     inMemoryGroupItemsRepository = new InMemoryGroupItemsRepository(
       inMemoryMaterialsRepository,
+      inMemoryCablesRepository,
     );
     inMemoryGroupsRepository = new InMemoryGroupsRepository(
       inMemoryGroupItemsRepository,

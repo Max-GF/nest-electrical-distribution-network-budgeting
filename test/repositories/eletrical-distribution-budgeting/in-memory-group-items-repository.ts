@@ -1,12 +1,17 @@
 import { GroupItemsRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/group-items-repository";
+import { Cable } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/cable";
 import { GroupItem } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/group-item";
 import { Material } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/material";
 import { GroupItemWithDetails } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/group-item-with-details";
+import { InMemoryCablesRepository } from "./in-memory-cables-repository";
 import { InMemoryMaterialsRepository } from "./in-memory-materials-repository";
 
 export class InMemoryGroupItemsRepository implements GroupItemsRepository {
   public items: GroupItem[] = [];
-  constructor(private materialsRepository: InMemoryMaterialsRepository) {}
+  constructor(
+    private materialsRepository: InMemoryMaterialsRepository,
+    private cablesRepository: InMemoryCablesRepository,
+  ) {}
 
   async createMany(groupitems: GroupItem[]): Promise<void> {
     this.items.push(...groupitems);
@@ -43,6 +48,12 @@ export class InMemoryGroupItemsRepository implements GroupItemsRepository {
     );
     const materialsMap = new Map<string, Material>(
       groupMaterials.map((material) => [material.id.toString(), material]),
+    );
+    const groupCables = await this.cablesRepository.findByIds(
+      groupItems.map((item) => item.id.toString()),
+    );
+    const cablesMap = new Map<string, Cable>(
+      groupCables.map((cable) => [cable.id.toString(), cable]),
     );
 
     const groupItemsWithDetails = groupItems
@@ -81,6 +92,14 @@ export class InMemoryGroupItemsRepository implements GroupItemsRepository {
           });
         }
         if (item.isCableConnector()) {
+          const cable = item.localCableId
+            ? cablesMap.get(item.localCableId.toString())
+            : null; // Handle the case where localCableId is undefined
+          if (cable === undefined) {
+            throw new Error(
+              `Cable with ID ${item.localCableId?.toString()} not found for GroupItem ${item.id.toString()}`,
+            );
+          }
           return GroupItemWithDetails.createCableConnector({
             addByPhase: item.addByPhase,
             groupId: item.groupId,
@@ -88,7 +107,8 @@ export class InMemoryGroupItemsRepository implements GroupItemsRepository {
             type: item.type,
             description: item.description,
             groupItemId: item.id,
-            localCableId: item.localCableId,
+            localCable: cable ?? undefined,
+            oneSideConnector: item.oneSideConnector,
           });
         }
         return null;
@@ -110,6 +130,18 @@ export class InMemoryGroupItemsRepository implements GroupItemsRepository {
     );
     const materialsMap = new Map<string, Material>(
       groupMaterials.map((material) => [material.id.toString(), material]),
+    );
+
+    const groupCables = await this.cablesRepository.findByIds(
+      groupsItems.reduce((acc: string[], item) => {
+        if (item.isCableConnector() && item.localCableId) {
+          acc.push(item.localCableId.toString());
+        }
+        return acc;
+      }, []),
+    );
+    const cablesMap = new Map<string, Cable>(
+      groupCables.map((cable) => [cable.id.toString(), cable]),
     );
 
     const groupItemsWithDetails = groupsItems
@@ -148,6 +180,14 @@ export class InMemoryGroupItemsRepository implements GroupItemsRepository {
           });
         }
         if (item.isCableConnector()) {
+          const cable = item.localCableId
+            ? cablesMap.get(item.localCableId.toString())
+            : null;
+          if (cable === undefined) {
+            throw new Error(
+              `Cable with ID ${item.localCableId?.toString()} not found for GroupItem ${item.id.toString()}`,
+            );
+          }
           return GroupItemWithDetails.createCableConnector({
             addByPhase: item.addByPhase,
             groupId: item.groupId,
@@ -155,7 +195,8 @@ export class InMemoryGroupItemsRepository implements GroupItemsRepository {
             type: item.type,
             description: item.description,
             groupItemId: item.id,
-            localCableId: item.localCableId,
+            localCable: cable ?? undefined,
+            oneSideConnector: item.oneSideConnector,
           });
         }
         return null;

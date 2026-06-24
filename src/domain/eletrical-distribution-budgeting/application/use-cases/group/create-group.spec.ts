@@ -24,6 +24,7 @@ describe("Create Group", () => {
     inMemoryCablesRepository = new InMemoryCablesRepository();
     inMemoryGroupItemsRepository = new InMemoryGroupItemsRepository(
       inMemoryMaterialsRepository,
+      inMemoryCablesRepository,
     );
     inMemoryGroupsRepository = new InMemoryGroupsRepository(
       inMemoryGroupItemsRepository,
