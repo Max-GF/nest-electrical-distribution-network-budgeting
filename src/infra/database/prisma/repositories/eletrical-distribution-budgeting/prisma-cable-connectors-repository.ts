@@ -19,15 +19,19 @@ export class PrismaCableConnectorsRepository
   constructor(private prisma: PrismaService) {}
 
   async createMany(cableConnectors: CableConnector[]): Promise<void> {
-    await this.prisma.cableConnector.createMany({
-      data: cableConnectors.map(PrismaCableConnectorMapper.toPrisma),
-    });
+    await this.prisma.$transaction(
+      cableConnectors.map((connector) =>
+        this.prisma.cableConnector.create({
+          data: PrismaCableConnectorMapper.toPrismaCreate(connector),
+        }),
+      ),
+    );
   }
 
   async save(cableConnector: CableConnector): Promise<void> {
-    const data = PrismaCableConnectorMapper.toPrisma(cableConnector);
+    const data = PrismaCableConnectorMapper.toPrismaUpdate(cableConnector);
     await this.prisma.cableConnector.update({
-      where: { id: data.id },
+      where: { id: cableConnector.id.toString() },
       data,
     });
   }
@@ -35,6 +39,10 @@ export class PrismaCableConnectorsRepository
   async findById(id: string): Promise<CableConnector | null> {
     const cableConnector = await this.prisma.cableConnector.findUnique({
       where: { id },
+      include: {
+        entranceCables: true,
+        exitCables: true,
+      },
     });
 
     if (!cableConnector) {
@@ -51,6 +59,10 @@ export class PrismaCableConnectorsRepository
           in: ids,
         },
       },
+      include: {
+        entranceCables: true,
+        exitCables: true,
+      },
     });
 
     return cableConnectors.map(PrismaCableConnectorMapper.toDomain);
@@ -59,6 +71,10 @@ export class PrismaCableConnectorsRepository
   async findByCode(code: number): Promise<CableConnector | null> {
     const cableConnector = await this.prisma.cableConnector.findFirst({
       where: { code },
+      include: {
+        entranceCables: true,
+        exitCables: true,
+      },
     });
 
     if (!cableConnector) {
@@ -68,18 +84,26 @@ export class PrismaCableConnectorsRepository
     return PrismaCableConnectorMapper.toDomain(cableConnector);
   }
 
-  async findAllCodes(): Promise<number[]> {
+  async findByCodes(codes: number[]): Promise<CableConnector[]> {
     const cableConnectors = await this.prisma.cableConnector.findMany({
-      select: { code: true },
+      where: {
+        code: {
+          in: codes,
+        },
+      },
+      include: {
+        entranceCables: true,
+        exitCables: true,
+      },
     });
 
-    return cableConnectors.map((c) => c.code);
+    return cableConnectors.map(PrismaCableConnectorMapper.toDomain);
   }
-
-  async getAllOrderedByLength(): Promise<CableConnector[]> {
+  async getAll(): Promise<CableConnector[]> {
     const cableConnectors = await this.prisma.cableConnector.findMany({
-      orderBy: {
-        entranceMinValueMM: "asc",
+      include: {
+        entranceCables: true,
+        exitCables: true,
       },
     });
 
@@ -93,17 +117,10 @@ export class PrismaCableConnectorsRepository
     cableConnectors: CableConnector[];
     pagination: PaginationResponseParams;
   }> {
-    const {
-      codes,
-      description,
-      entranceMaxValueMM,
-      entranceMinValueMM,
-      exitMaxValueMM,
-      exitMinValueMM,
-    } = filterOptions;
+    const { codes, description } = filterOptions;
     const where: Prisma.CableConnectorWhereInput = {};
 
-    if (codes) {
+    if (codes && codes.length > 0) {
       where.code = { in: codes };
     }
     if (description) {
@@ -112,30 +129,17 @@ export class PrismaCableConnectorsRepository
         mode: "insensitive",
       };
     }
-    if (entranceMaxValueMM || entranceMinValueMM) {
-      where.entranceMinValueMM = {};
-      if (entranceMaxValueMM) {
-        where.entranceMinValueMM.lte = entranceMaxValueMM;
-      }
-      if (entranceMinValueMM) {
-        where.entranceMinValueMM.gte = entranceMinValueMM;
-      }
-    }
-    if (exitMaxValueMM || exitMinValueMM) {
-      where.exitMinValueMM = {};
-      if (exitMaxValueMM) {
-        where.exitMinValueMM.lte = exitMaxValueMM;
-      }
-      if (exitMinValueMM) {
-        where.exitMinValueMM.gte = exitMinValueMM;
-      }
-    }
+
     const [count, cableConnectors] = await Promise.all([
       this.prisma.cableConnector.count({ where }),
       this.prisma.cableConnector.findMany({
         where,
         take: paginationParams.pageSize,
         skip: (paginationParams.page - 1) * paginationParams.pageSize,
+        include: {
+          entranceCables: true,
+          exitCables: true,
+        },
       }),
     ]);
 

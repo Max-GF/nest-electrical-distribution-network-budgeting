@@ -32,6 +32,7 @@ beforeAll(async () => {
     `Running e2e tests on the following database schemaId: ${schemaId}`,
   );
   process.env.DATABASE_URL = databaseURL;
+  process.env.DIRECT_URL = databaseURL;
   DomainEvents.shouldRun = false; // Disable domain events for all tests, remember to enable them in the test that needs them
   await redis.flushdb();
 

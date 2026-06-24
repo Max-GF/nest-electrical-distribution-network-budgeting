@@ -153,6 +153,11 @@ model Cable {
   pointsAsLowEntrance    Point[] @relation("LowTensionEntranceCable")
   pointsAsLowExit        Point[] @relation("LowTensionExitCable")
 
+  connectorsAsEntrance CableConnector[] @relation("ConnectorEntranceCables")
+  connectorsAsExit     CableConnector[] @relation("ConnectorExitCables")
+
+  groupItems GroupItem[] @relation("LocalCableGroupItem")
+
   @@map("cables")
 }
 
@@ -162,10 +167,8 @@ model CableConnector {
   description String
   unit        String
 
-  entranceMinValueMM Float @map("entrance_min_value_mm")
-  entranceMaxValueMM Float @map("entrance_max_value_mm")
-  exitMinValueMM     Float @map("exit_min_value_mm")
-  exitMaxValueMM     Float @map("exit_max_value_mm")
+  entranceCables Cable[] @relation("ConnectorEntranceCables")
+  exitCables     Cable[] @relation("ConnectorExitCables")
 
   @@map("cable_connectors")
 }
@@ -200,13 +203,15 @@ model GroupItem {
   type        String // "material", "poleScrew", "cableConnector"
 
   // Specific fields
-  materialId            String?  @map("material_id")
-  lengthAdd             Float?   @map("length_add")
-  localCableSectionInMM Float?   @map("local_cable_section_in_mm")
-  oneSideConnector      Boolean? @map("one_side_connector")
+  materialId String? @map("material_id")
+  lengthAdd  Float?  @map("length_add")
 
-  group    Group     @relation(fields: [groupId], references: [id])
-  material Material? @relation(fields: [materialId], references: [id])
+  localCableId     String?  @map("local_cable_id")
+  oneSideConnector Boolean? @map("one_side_connector")
+
+  group      Group     @relation(fields: [groupId], references: [id])
+  material   Material? @relation(fields: [materialId], references: [id])
+  localCable Cable?    @relation("LocalCableGroupItem", fields: [localCableId], references: [id])
 
   @@map("group_items")
 }

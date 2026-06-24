@@ -74,6 +74,7 @@ export class PrismaGroupItemsRepository implements GroupItemsRepository {
       where: { groupId },
       include: {
         material: true,
+        localCable: true,
       },
     });
 
@@ -93,6 +94,7 @@ export class PrismaGroupItemsRepository implements GroupItemsRepository {
       },
       include: {
         material: true,
+        localCable: true,
       },
     });
 

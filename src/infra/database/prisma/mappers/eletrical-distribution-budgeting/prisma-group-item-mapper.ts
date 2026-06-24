@@ -1,16 +1,20 @@
 import {
   Prisma,
+  Cable as PrismaCable,
   GroupItem as PrismaGroupItem,
   Material as PrismaMaterial,
 } from "prisma/generated/client";
 import { UniqueEntityID } from "src/core/entities/unique-entity-id";
 import { GroupItem as DomainGroupItem } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/group-item";
 import { GroupItemWithDetails as DomainGroupItemWithDetails } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/group-item-with-details";
+import { PrismaCableMapper } from "./prisma-cable-mapper";
 import { PrismaMaterialMapper } from "./prisma-material-mapper";
 
 export type PrismaGroupItemWithDetails = PrismaGroupItem & {
   material: PrismaMaterial | null;
+  localCable: PrismaCable | null;
 };
+
 export class PrismaGroupItemMapper {
   static toDomain(raw: PrismaGroupItem): DomainGroupItem {
     switch (raw.type) {
@@ -48,7 +52,9 @@ export class PrismaGroupItemMapper {
             type: raw.type,
             addByPhase: raw.addByPhase,
             description: raw.description ?? undefined,
-            localCableSectionInMM: raw.localCableSectionInMM ?? 0,
+            localCableId: raw.localCableId
+              ? new UniqueEntityID(raw.localCableId)
+              : undefined,
             oneSideConnector: raw.oneSideConnector ?? undefined,
           },
           new UniqueEntityID(raw.id),
@@ -57,6 +63,7 @@ export class PrismaGroupItemMapper {
         throw new Error(`Unknown group item type: ${raw.type}`);
     }
   }
+
   static toDomainWithDetails(
     raw: PrismaGroupItemWithDetails,
   ): DomainGroupItemWithDetails {
@@ -65,7 +72,6 @@ export class PrismaGroupItemMapper {
         return DomainGroupItemWithDetails.createMaterial({
           groupItemId: new UniqueEntityID(raw.id),
           groupId: new UniqueEntityID(raw.groupId),
-
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           material: PrismaMaterialMapper.toDomain(raw.material!),
           quantity: raw.quantity,
@@ -92,7 +98,10 @@ export class PrismaGroupItemMapper {
           type: raw.type,
           addByPhase: raw.addByPhase,
           description: raw.description ?? undefined,
-          localCableSectionInMM: raw.localCableSectionInMM ?? 0,
+          // Cabo mapeado com segurança
+          localCable: raw.localCable
+            ? PrismaCableMapper.toDomain(raw.localCable)
+            : undefined,
           oneSideConnector: raw.oneSideConnector ?? undefined,
         });
       default:
@@ -103,7 +112,6 @@ export class PrismaGroupItemMapper {
   static toPrisma(
     groupItem: DomainGroupItem,
   ): Prisma.GroupItemUncheckedCreateInput {
-    // "UncheckedCreateInput" Impede um erro de tipo com os campos ausentes
     const base = {
       id: groupItem.id.toString(),
       groupId: groupItem.groupId.toString(),
@@ -126,7 +134,7 @@ export class PrismaGroupItemMapper {
     } else if (groupItem.type === "cableConnector") {
       return {
         ...base,
-        localCableSectionInMM: groupItem.localCableSectionInMM,
+        localCableId: groupItem.localCableId?.toString() ?? null,
         oneSideConnector: groupItem.oneSideConnector,
       };
     }

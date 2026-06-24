@@ -1,5 +1,64 @@
 -- CreateEnum
-CREATE TYPE "TensionLevel" AS ENUM ('LOW', 'MEDIUM');
+CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'COMMON');
+
+-- CreateEnum
+CREATE TYPE "TensionLevel" AS ENUM ('LOW', 'MEDIUM', 'ANY');
+
+-- CreateTable
+CREATE TABLE "users" (
+    "id" TEXT NOT NULL,
+    "cpf" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "role" "UserRole" NOT NULL DEFAULT 'COMMON',
+    "base_id" TEXT NOT NULL,
+    "company_id" TEXT NOT NULL,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "first_login" BOOLEAN NOT NULL DEFAULT true,
+    "avatar_id" TEXT,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "companies" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "cnpj" TEXT NOT NULL,
+
+    CONSTRAINT "companies_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "bases" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "company_id" TEXT NOT NULL,
+
+    CONSTRAINT "bases_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "notifications" (
+    "id" TEXT NOT NULL,
+    "recipient_id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "read_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "avatars" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+
+    CONSTRAINT "avatars_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "projects" (
@@ -48,6 +107,7 @@ CREATE TABLE "cables" (
     "unit" TEXT NOT NULL,
     "tension" "TensionLevel" NOT NULL,
     "section_area_in_mm" DOUBLE PRECISION NOT NULL,
+    "meter_to_kg_conversion_factor" DOUBLE PRECISION,
 
     CONSTRAINT "cables_pkey" PRIMARY KEY ("id")
 );
@@ -58,10 +118,6 @@ CREATE TABLE "cable_connectors" (
     "code" INTEGER NOT NULL,
     "description" TEXT NOT NULL,
     "unit" TEXT NOT NULL,
-    "entrance_min_value_mm" DOUBLE PRECISION NOT NULL,
-    "entrance_max_value_mm" DOUBLE PRECISION NOT NULL,
-    "exit_min_value_mm" DOUBLE PRECISION NOT NULL,
-    "exit_max_value_mm" DOUBLE PRECISION NOT NULL,
 
     CONSTRAINT "cable_connectors_pkey" PRIMARY KEY ("id")
 );
@@ -97,7 +153,7 @@ CREATE TABLE "group_items" (
     "type" TEXT NOT NULL,
     "material_id" TEXT,
     "length_add" DOUBLE PRECISION,
-    "local_cable_section_in_mm" DOUBLE PRECISION,
+    "local_cable_id" TEXT,
     "one_side_connector" BOOLEAN,
 
     CONSTRAINT "group_items_pkey" PRIMARY KEY ("id")
@@ -133,6 +189,40 @@ CREATE TABLE "project_materials" (
     CONSTRAINT "project_materials_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "_ConnectorEntranceCables" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_ConnectorEntranceCables_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateTable
+CREATE TABLE "_ConnectorExitCables" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_ConnectorExitCables_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_cpf_key" ON "users"("cpf");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "companies_name_key" ON "companies"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "companies_cnpj_key" ON "companies"("cnpj");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "bases_name_company_id_key" ON "bases"("name", "company_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "avatars_url_key" ON "avatars"("url");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "materials_code_key" ON "materials"("code");
 
@@ -148,11 +238,35 @@ CREATE UNIQUE INDEX "cable_connectors_code_key" ON "cable_connectors"("code");
 -- CreateIndex
 CREATE UNIQUE INDEX "pole_screws_code_key" ON "pole_screws"("code");
 
+-- CreateIndex
+CREATE INDEX "_ConnectorEntranceCables_B_index" ON "_ConnectorEntranceCables"("B");
+
+-- CreateIndex
+CREATE INDEX "_ConnectorExitCables_B_index" ON "_ConnectorExitCables"("B");
+
+-- AddForeignKey
+ALTER TABLE "users" ADD CONSTRAINT "users_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "users" ADD CONSTRAINT "users_base_id_fkey" FOREIGN KEY ("base_id") REFERENCES "bases"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "users" ADD CONSTRAINT "users_avatar_id_fkey" FOREIGN KEY ("avatar_id") REFERENCES "avatars"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "bases" ADD CONSTRAINT "bases_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_recipient_id_fkey" FOREIGN KEY ("recipient_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
 -- AddForeignKey
 ALTER TABLE "group_items" ADD CONSTRAINT "group_items_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "groups"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "group_items" ADD CONSTRAINT "group_items_material_id_fkey" FOREIGN KEY ("material_id") REFERENCES "materials"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "group_items" ADD CONSTRAINT "group_items_local_cable_id_fkey" FOREIGN KEY ("local_cable_id") REFERENCES "cables"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "points" ADD CONSTRAINT "points_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "projects"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -177,3 +291,15 @@ ALTER TABLE "project_materials" ADD CONSTRAINT "project_materials_project_id_fke
 
 -- AddForeignKey
 ALTER TABLE "project_materials" ADD CONSTRAINT "project_materials_point_id_fkey" FOREIGN KEY ("point_id") REFERENCES "points"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ConnectorEntranceCables" ADD CONSTRAINT "_ConnectorEntranceCables_A_fkey" FOREIGN KEY ("A") REFERENCES "cables"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ConnectorEntranceCables" ADD CONSTRAINT "_ConnectorEntranceCables_B_fkey" FOREIGN KEY ("B") REFERENCES "cable_connectors"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ConnectorExitCables" ADD CONSTRAINT "_ConnectorExitCables_A_fkey" FOREIGN KEY ("A") REFERENCES "cables"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ConnectorExitCables" ADD CONSTRAINT "_ConnectorExitCables_B_fkey" FOREIGN KEY ("B") REFERENCES "cable_connectors"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -65,6 +65,17 @@ export class PrismaCablesRepository implements CablesRepository {
 
     return PrismaCableMapper.toDomain(cable);
   }
+  async findByCodes(codes: number[]): Promise<Cable[]> {
+    const cables = await this.prisma.cable.findMany({
+      where: {
+        code: {
+          in: codes,
+        },
+      },
+    });
+
+    return cables.map(PrismaCableMapper.toDomain);
+  }
 
   async findAllCodes(): Promise<number[]> {
     const cables = await this.prisma.cable.findMany({

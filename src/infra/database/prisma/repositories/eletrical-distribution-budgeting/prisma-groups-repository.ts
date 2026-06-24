@@ -220,6 +220,7 @@ export class PrismaGroupsRepository implements GroupsRepository {
           items: {
             include: {
               material: true,
+              localCable: true,
             },
             orderBy: [{ materialId: "asc" }, { type: "asc" }],
           },
