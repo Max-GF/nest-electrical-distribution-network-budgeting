@@ -9,7 +9,7 @@ export class PrismaService
   constructor() {
     super({
       log: [
-        "query", // Just for debugging purposes
+        // "query", // Just for debugging purposes
         "info",
         "warn",
         "error",

@@ -6,7 +6,14 @@ import { EnvService } from "./env/env.service";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ["log", "debug", "error", "fatal", "verbose", "warn"], // For production, set to false
+    logger: [
+      "log",
+      "debug", // Body - Query - Params - Headers - Response
+      "error",
+      "fatal",
+      // "verbose",
+      "warn",
+    ], // For production, set to false
   });
 
   app.use(json({ limit: "1mb" }));

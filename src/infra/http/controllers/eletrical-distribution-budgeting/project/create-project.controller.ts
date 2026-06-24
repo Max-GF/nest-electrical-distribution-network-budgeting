@@ -13,8 +13,8 @@ import { CreateProjectDto } from "../../../swagger/eletrical-distribution-budget
 import { CreateProjectResponse } from "../../../swagger/eletrical-distribution-budgeting/responses/project/create-project.response";
 
 const createProjectBodySchema = z.object({
-  name: z.string().min(1),
-  description: z.string().min(1),
+  name: z.string().min(1).toUpperCase(),
+  description: z.string().min(1).toUpperCase(),
   budgetAlreadyCalculated: z.boolean(),
 });
 

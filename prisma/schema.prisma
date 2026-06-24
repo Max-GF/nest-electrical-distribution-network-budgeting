@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {
@@ -139,13 +140,13 @@ model UtilityPole {
 }
 
 model Cable {
-  id              String       @id @default(uuid())
-  code            Int          @unique
-  description     String
-  unit            String
-  tension         TensionLevel
-  sectionAreaInMM Float        @map("section_area_in_mm")
-  meterToKgConversionFactor Float? @map("meter_to_kg_conversion_factor")
+  id                        String       @id @default(uuid())
+  code                      Int          @unique
+  description               String
+  unit                      String
+  tension                   TensionLevel
+  sectionAreaInMM           Float        @map("section_area_in_mm")
+  meterToKgConversionFactor Float?       @map("meter_to_kg_conversion_factor")
 
   pointsAsMediumEntrance Point[] @relation("MediumTensionEntranceCable")
   pointsAsMediumExit     Point[] @relation("MediumTensionExitCable")

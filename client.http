@@ -18,7 +18,7 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
  
 {
-    "name": "Test_Company",
+    "name": "Test Company",
     "cnpj": "41735673000177"
 }
 ###
@@ -37,8 +37,8 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
  
 {
-    "name": "Test_Base_1",
-    "companyId": "c815a01e-e074-4704-b923-3de7604f1acb"
+    "name": "Test Base",
+    "companyId": "a5d128ab-f14d-4fd5-ac36-394a0316f400"
 }
 ###
 
@@ -61,8 +61,8 @@ Authorization: Bearer {{authToken}}
     "email": "max@test.com",
     "password": "123456",
     "role" : "ADMIN",
-    "companyId": "c815a01e-e074-4704-b923-3de7604f1acb",
-    "baseId" : "58e2c315-38cf-489d-be2c-787299bae807"
+    "companyId": "a5d128ab-f14d-4fd5-ac36-394a0316f400",
+    "baseId" : "e45c9eb4-f9a6-4de1-adbb-11d3ee053821"
 }
 ###
 

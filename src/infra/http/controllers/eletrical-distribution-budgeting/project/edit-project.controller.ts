@@ -14,8 +14,8 @@ import { EditProjectDto } from "../../../swagger/eletrical-distribution-budgetin
 import { EditProjectResponse } from "../../../swagger/eletrical-distribution-budgeting/responses/project/edit-project.response";
 
 const editProjectBodySchema = z.object({
-  name: z.string().optional(),
-  description: z.string().optional(),
+  name: z.string().toUpperCase().optional(),
+  description: z.string().toUpperCase().optional(),
   budgetAlreadyCalculated: z.boolean().optional(),
 });
 
