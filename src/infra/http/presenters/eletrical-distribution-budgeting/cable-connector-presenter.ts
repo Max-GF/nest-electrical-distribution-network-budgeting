@@ -7,10 +7,12 @@ export class CableConnectorPresenter {
       code: cableConnector.code,
       description: cableConnector.description,
       unit: cableConnector.unit,
-      entranceMinValueMM: cableConnector.entranceMinValueMM,
-      entranceMaxValueMM: cableConnector.entranceMaxValueMM,
-      exitMinValueMM: cableConnector.exitMinValueMM,
-      exitMaxValueMM: cableConnector.exitMaxValueMM,
+      entranceCablesOptionsIds: cableConnector.entranceCablesOptionsIds.map(
+        (id) => id.toString(),
+      ),
+      exitCablesOptionsIds: (cableConnector.exitCablesOptionsIds ?? []).map(
+        (id) => id.toString(),
+      ),
     };
   }
 }

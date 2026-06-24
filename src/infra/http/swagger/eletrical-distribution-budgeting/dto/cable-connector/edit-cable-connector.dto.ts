@@ -23,30 +23,16 @@ export class EditCableConnectorDto {
   unit?: string;
 
   @ApiProperty({
-    description: "The minimum entrance value in mm",
-    example: 10,
+    description: "The IDs of the entrance cables options",
+    example: ["uuid1", "uuid2"],
     required: false,
   })
-  entranceMinValueMM?: number;
+  newEntranceCablesOptionsIds?: string[];
 
   @ApiProperty({
-    description: "The maximum entrance value in mm",
-    example: 95,
+    description: "The IDs of the exit cables options",
+    example: ["uuid3", "uuid4"],
     required: false,
   })
-  entranceMaxValueMM?: number;
-
-  @ApiProperty({
-    description: "The minimum exit value in mm",
-    example: 1.5,
-    required: false,
-  })
-  exitMinValueMM?: number;
-
-  @ApiProperty({
-    description: "The maximum exit value in mm",
-    example: 10,
-    required: false,
-  })
-  exitMaxValueMM?: number;
+  newExitCablesOptionsIds?: string[];
 }

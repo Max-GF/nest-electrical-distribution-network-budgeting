@@ -24,10 +24,7 @@ const fetchCableConnectorsQuerySchema = z.object({
         .map((tag) => Number(tag.trim()));
     }),
   description: z.string().optional(),
-  entranceMinValueMM: z.coerce.number().optional(),
-  entranceMaxValueMM: z.coerce.number().optional(),
-  exitMinValueMM: z.coerce.number().optional(),
-  exitMaxValueMM: z.coerce.number().optional(),
+
   page: z.coerce.number().optional().default(1),
   pageSize: z.coerce.number().optional().default(20),
 });

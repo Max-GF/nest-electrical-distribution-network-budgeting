@@ -6,6 +6,7 @@ import { AppModule } from "src/infra/app.module";
 import { DatabaseModule } from "src/infra/database/database.module";
 import request from "supertest";
 import { AccessTokenCreator } from "test/access-token-creator";
+import { CableFactory } from "test/factories/eletrical-distribution-budgeting/make-cable";
 import { BaseFactory } from "test/factories/user-management/make-base";
 import { CompanyFactory } from "test/factories/user-management/make-company";
 import { UserFactory } from "test/factories/user-management/make-user";
@@ -17,11 +18,18 @@ describe("Create Bulk Of Cable Connectors (E2E)", () => {
   let companyFactory: CompanyFactory;
   let baseFactory: BaseFactory;
   let userFactory: UserFactory;
+  let cableFactory: CableFactory;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule, DatabaseModule],
-      providers: [AccessTokenCreator, CompanyFactory, BaseFactory, UserFactory],
+      providers: [
+        AccessTokenCreator,
+        CompanyFactory,
+        BaseFactory,
+        UserFactory,
+        CableFactory,
+      ],
     }).compile();
 
     app = moduleRef.createNestApplication();
@@ -30,6 +38,7 @@ describe("Create Bulk Of Cable Connectors (E2E)", () => {
     companyFactory = moduleRef.get(CompanyFactory);
     baseFactory = moduleRef.get(BaseFactory);
     userFactory = moduleRef.get(UserFactory);
+    cableFactory = moduleRef.get(CableFactory);
 
     await app.init();
   });
@@ -48,6 +57,10 @@ describe("Create Bulk Of Cable Connectors (E2E)", () => {
     });
     const accessToken = accessTokenCreator.execute(user);
 
+    const cable1 = await cableFactory.makePrismaCable({});
+    const cable2 = await cableFactory.makePrismaCable({});
+    const cable3 = await cableFactory.makePrismaCable({});
+
     const response = await request(app.getHttpServer())
       .post("/cable-connectors/bulk")
       .set("Authorization", `Bearer ${accessToken}`)
@@ -57,19 +70,15 @@ describe("Create Bulk Of Cable Connectors (E2E)", () => {
             code: 12345,
             description: "CONECTOR PERFURANTE 10-95MM",
             unit: "UND",
-            entranceMinValueMM: 10,
-            entranceMaxValueMM: 95,
-            exitMinValueMM: 1.5,
-            exitMaxValueMM: 10,
+            entranceCablesOptionsCodes: [cable1.code, cable2.code],
+            exitCablesOptionsCodes: [cable2.code],
           },
           {
             code: 54321,
             description: "CONECTOR PERFURANTE 95-240MM",
             unit: "UND",
-            entranceMinValueMM: 95,
-            entranceMaxValueMM: 240,
-            exitMinValueMM: 10,
-            exitMaxValueMM: 35,
+            entranceCablesOptionsCodes: [cable3.code],
+            exitCablesOptionsCodes: [],
           },
         ],
       });
@@ -92,5 +101,8 @@ describe("Create Bulk Of Cable Connectors (E2E)", () => {
 
     expect(cableConnector1).toBeTruthy();
     expect(cableConnector2).toBeTruthy();
+
+    expect(cableConnector1?.entranceCablesOptionsIds).toHaveLength(2);
+    expect(cableConnector2?.entranceCablesOptionsIds).toHaveLength(1);
   });
 });

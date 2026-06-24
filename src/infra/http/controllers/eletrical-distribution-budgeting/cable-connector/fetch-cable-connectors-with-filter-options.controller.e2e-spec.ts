@@ -6,6 +6,7 @@ import { AppModule } from "src/infra/app.module";
 import { DatabaseModule } from "src/infra/database/database.module";
 import request from "supertest";
 import { AccessTokenCreator } from "test/access-token-creator";
+import { CableFactory } from "test/factories/eletrical-distribution-budgeting/make-cable";
 import { makeCableConnector } from "test/factories/eletrical-distribution-budgeting/make-cable-connectors";
 import { BaseFactory } from "test/factories/user-management/make-base";
 import { CompanyFactory } from "test/factories/user-management/make-company";
@@ -18,11 +19,18 @@ describe("Fetch Cable Connectors With Filter Options (E2E)", () => {
   let companyFactory: CompanyFactory;
   let baseFactory: BaseFactory;
   let userFactory: UserFactory;
+  let cableFactory: CableFactory;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule, DatabaseModule],
-      providers: [AccessTokenCreator, CompanyFactory, BaseFactory, UserFactory],
+      providers: [
+        AccessTokenCreator,
+        CompanyFactory,
+        BaseFactory,
+        UserFactory,
+        CableFactory,
+      ],
     }).compile();
 
     app = moduleRef.createNestApplication();
@@ -31,6 +39,7 @@ describe("Fetch Cable Connectors With Filter Options (E2E)", () => {
     companyFactory = moduleRef.get(CompanyFactory);
     baseFactory = moduleRef.get(BaseFactory);
     userFactory = moduleRef.get(UserFactory);
+    cableFactory = moduleRef.get(CableFactory);
 
     await app.init();
   });
@@ -49,14 +58,22 @@ describe("Fetch Cable Connectors With Filter Options (E2E)", () => {
     });
     const accessToken = accessTokenCreator.execute(user);
 
+    const cable = await cableFactory.makePrismaCable({});
+
     const cableConnector1 = makeCableConnector({
       code: 12345,
       description: "CONECTOR 1",
+      entranceCablesOptionsIds: [cable.id],
+      exitCablesOptionsIds: [],
     });
+
     const cableConnector2 = makeCableConnector({
       code: 54321,
       description: "CONECTOR 2",
+      entranceCablesOptionsIds: [cable.id],
+      exitCablesOptionsIds: [cable.id],
     });
+
     await cableConnectorsRepository.createMany([
       cableConnector1,
       cableConnector2,
@@ -72,6 +89,26 @@ describe("Fetch Cable Connectors With Filter Options (E2E)", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body.cableConnectors).toHaveLength(2);
+    expect(response.body.cableConnectors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 12345,
+          description: "CONECTOR 1",
+          entranceCablesOptionsIds: expect.arrayContaining([
+            cable.id.toString(),
+          ]),
+          exitCablesOptionsIds: expect.arrayContaining([]),
+        }),
+        expect.objectContaining({
+          code: 54321,
+          description: "CONECTOR 2",
+          entranceCablesOptionsIds: expect.arrayContaining([
+            cable.id.toString(),
+          ]),
+          exitCablesOptionsIds: expect.arrayContaining([cable.id.toString()]),
+        }),
+      ]),
+    );
     expect(response.body.pagination).toEqual({
       actualPage: 1,
       actualPageSize: 2,

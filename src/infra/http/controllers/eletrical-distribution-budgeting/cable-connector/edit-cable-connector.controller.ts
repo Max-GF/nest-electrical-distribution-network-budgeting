@@ -3,12 +3,12 @@ import {
   ConflictException,
   Controller,
   InternalServerErrorException,
+  NotFoundException,
   Param,
   Put,
   UnprocessableEntityException,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { NegativeCableSectionError } from "src/core/errors/erros-eletrical-distribution-budgeting/negative-cable-section-length-error";
 import { AlreadyRegisteredError } from "src/core/errors/generics/already-registered-error";
 import { NotAllowedError } from "src/core/errors/generics/not-allowed-error";
 import { ResourceNotFoundError } from "src/core/errors/generics/resource-not-found-error";
@@ -20,13 +20,10 @@ import { EditCableConnectorResponse } from "src/infra/http/swagger/eletrical-dis
 import { z } from "zod";
 
 const editCableConnectorBodySchema = z.object({
-  code: z.number().optional(),
   description: z.string().optional(),
   unit: z.string().optional(),
-  entranceMinValueMM: z.number().optional(),
-  entranceMaxValueMM: z.number().optional(),
-  exitMinValueMM: z.number().optional(),
-  exitMaxValueMM: z.number().optional(),
+  newEntranceCablesOptionsIds: z.array(z.string().uuid()).optional(),
+  newExitCablesOptionsIds: z.array(z.string().uuid()).optional(),
 });
 
 @ApiTags("Cable Connector")
@@ -54,10 +51,9 @@ export class EditCableConnectorController {
 
       switch (error.constructor) {
         case ResourceNotFoundError:
-          throw new ConflictException(error.message);
+          throw new NotFoundException(error.message);
         case AlreadyRegisteredError:
           throw new ConflictException(error.message);
-        case NegativeCableSectionError:
         case NotAllowedError:
           throw new UnprocessableEntityException(error.message);
         default:

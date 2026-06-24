@@ -11,10 +11,8 @@ const createCableConnectorBodySchema = z.object({
   code: z.number(),
   description: z.string(),
   unit: z.string(),
-  entranceMinValueMM: z.number(),
-  entranceMaxValueMM: z.number(),
-  exitMinValueMM: z.number(),
-  exitMaxValueMM: z.number(),
+  entranceCablesOptionsCodes: z.array(z.number()),
+  exitCablesOptionsCodes: z.array(z.number()).optional(),
 });
 
 const createBulkOfCableConnectorsBodySchema = z.object({

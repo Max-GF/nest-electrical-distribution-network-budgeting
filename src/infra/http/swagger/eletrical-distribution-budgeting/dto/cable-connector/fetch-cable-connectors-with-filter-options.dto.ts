@@ -17,34 +17,6 @@ export class FetchCableConnectorsWithFilterOptionsDto {
   description?: string;
 
   @ApiProperty({
-    description: "The minimum entrance value in mm",
-    example: 10,
-    required: false,
-  })
-  entranceMinValueMM?: number;
-
-  @ApiProperty({
-    description: "The maximum entrance value in mm",
-    example: 95,
-    required: false,
-  })
-  entranceMaxValueMM?: number;
-
-  @ApiProperty({
-    description: "The minimum exit value in mm",
-    example: 1.5,
-    required: false,
-  })
-  exitMinValueMM?: number;
-
-  @ApiProperty({
-    description: "The maximum exit value in mm",
-    example: 10,
-    required: false,
-  })
-  exitMaxValueMM?: number;
-
-  @ApiProperty({
     description: "The page number",
     example: 1,
     required: false,
