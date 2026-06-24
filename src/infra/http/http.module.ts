@@ -8,7 +8,6 @@ import { CreateBulkOfCablesUseCase } from "src/domain/eletrical-distribution-bud
 import { CreateCableUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/create-cable";
 import { EditCableUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/edit-cable";
 import { FetchCablesWithFilterOptionsUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/cable/fetch-cables-with-filter-options";
-import { CreateBulkOfGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/create-bulk-of-groups";
 import { CreateGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/create-group";
 import { EditGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/edit-group";
 import { FetchGroupUseCase } from "src/domain/eletrical-distribution-budgeting/application/use-cases/group/fetch-groups-with-filter-options";
@@ -59,7 +58,6 @@ import { CreateBulkOfCablesController } from "./controllers/eletrical-distributi
 import { CreateCableController } from "./controllers/eletrical-distribution-budgeting/cable/create-cable.controller";
 import { EditCableController } from "./controllers/eletrical-distribution-budgeting/cable/edit-cable.controller";
 import { FetchCablesWithFilterOptionsController } from "./controllers/eletrical-distribution-budgeting/cable/fetch-cables-with-filter-options.controller";
-import { CreateBulkOfGroupsController } from "./controllers/eletrical-distribution-budgeting/group/create-bulk-of-groups.controller";
 import { CreateGroupController } from "./controllers/eletrical-distribution-budgeting/group/create-group.controller";
 import { EditGroupController } from "./controllers/eletrical-distribution-budgeting/group/edit-group.controller";
 import { FetchGroupsController } from "./controllers/eletrical-distribution-budgeting/group/fetch-groups.controller";
@@ -139,7 +137,7 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     EditMaterialController,
     FetchMaterialsWithFilterOptionsController,
     CreateGroupController,
-    CreateBulkOfGroupsController,
+    // CreateBulkOfGroupsController,
     EditGroupController,
     FetchGroupsController,
     EditPointController,
@@ -188,7 +186,7 @@ import { RegisterUserController } from "./controllers/user-management/user/regis
     EditMaterialUseCase,
     FetchWithFilterMaterialsUseCase,
     CreateGroupUseCase,
-    CreateBulkOfGroupUseCase,
+    // CreateBulkOfGroupUseCase,
     EditGroupUseCase,
     FetchGroupUseCase,
     EditPointUseCase,
