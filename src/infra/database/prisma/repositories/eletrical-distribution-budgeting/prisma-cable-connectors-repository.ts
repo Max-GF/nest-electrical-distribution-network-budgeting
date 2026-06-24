@@ -9,6 +9,7 @@ import {
   FetchCableConnectorsFilterOptions,
 } from "src/domain/eletrical-distribution-budgeting/application/repositories/cable-connectors-repository";
 import { CableConnector } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/cable-connector";
+import { CableConnectorWithDetails } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/cable-connector-with-details";
 import { PrismaCableConnectorMapper } from "../../mappers/eletrical-distribution-budgeting/prisma-cable-connector-mapper";
 import { PrismaService } from "../../prisma.service";
 
@@ -114,7 +115,7 @@ export class PrismaCableConnectorsRepository
     filterOptions: FetchCableConnectorsFilterOptions,
     paginationParams: PaginationParams,
   ): Promise<{
-    cableConnectors: CableConnector[];
+    cableConnectors: CableConnectorWithDetails[];
     pagination: PaginationResponseParams;
   }> {
     const { codes, description } = filterOptions;
@@ -144,7 +145,9 @@ export class PrismaCableConnectorsRepository
     ]);
 
     return {
-      cableConnectors: cableConnectors.map(PrismaCableConnectorMapper.toDomain),
+      cableConnectors: cableConnectors.map(
+        PrismaCableConnectorMapper.toDomainWithDetails,
+      ),
       pagination: {
         actualPage: paginationParams.page,
         actualPageSize: cableConnectors.length,

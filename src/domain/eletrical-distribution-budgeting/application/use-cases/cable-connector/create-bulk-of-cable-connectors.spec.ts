@@ -12,8 +12,10 @@ let sut: CreateBulkOfCableConnectorsUseCase;
 
 describe("Create a bulk of Cable Connectors", () => {
   beforeEach(() => {
-    inMemoryCableConnectorsRepository = new InMemoryCableConnectorsRepository();
     inMemoryCablesRepository = new InMemoryCablesRepository();
+    inMemoryCableConnectorsRepository = new InMemoryCableConnectorsRepository(
+      inMemoryCablesRepository,
+    );
     sut = new CreateBulkOfCableConnectorsUseCase(
       inMemoryCableConnectorsRepository,
       inMemoryCablesRepository,

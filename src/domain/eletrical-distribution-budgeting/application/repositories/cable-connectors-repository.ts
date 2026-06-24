@@ -3,6 +3,7 @@ import {
   PaginationResponseParams,
 } from "src/core/repositories/pagination-params";
 import { CableConnector } from "../../enterprise/entities/cable-connector";
+import { CableConnectorWithDetails } from "../../enterprise/entities/value-objects/cable-connector-with-details";
 
 export interface FetchCableConnectorsFilterOptions {
   codes?: number[];
@@ -19,7 +20,7 @@ export abstract class CableConnectorsRepository {
     filterOptions: FetchCableConnectorsFilterOptions,
     paginationParams: PaginationParams,
   ): Promise<{
-    cableConnectors: CableConnector[];
+    cableConnectors: CableConnectorWithDetails[];
     pagination: PaginationResponseParams;
   }>;
   abstract getAll(): Promise<CableConnector[]>;

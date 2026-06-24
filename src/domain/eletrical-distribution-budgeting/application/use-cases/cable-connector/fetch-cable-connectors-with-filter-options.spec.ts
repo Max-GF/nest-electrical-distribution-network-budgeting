@@ -2,14 +2,19 @@ import { NotAllowedError } from "src/core/errors/generics/not-allowed-error";
 import { CableConnector } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/cable-connector";
 import { makeCableConnector } from "test/factories/eletrical-distribution-budgeting/make-cable-connectors";
 import { InMemoryCableConnectorsRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-cable-connectors-repository";
+import { InMemoryCablesRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-cables-repository";
 import { FetchWithFilterCableConnectorUseCase } from "./fetch-cable-connectors-with-filter-options";
 
 let inMemoryCableConnectorsRepository: InMemoryCableConnectorsRepository;
+let inMemoryCablesRepository: InMemoryCablesRepository;
 let sut: FetchWithFilterCableConnectorUseCase;
 
 describe("Fetch cable connectors with options", () => {
   beforeEach(() => {
-    inMemoryCableConnectorsRepository = new InMemoryCableConnectorsRepository();
+    inMemoryCablesRepository = new InMemoryCablesRepository();
+    inMemoryCableConnectorsRepository = new InMemoryCableConnectorsRepository(
+      inMemoryCablesRepository,
+    );
     sut = new FetchWithFilterCableConnectorUseCase(
       inMemoryCableConnectorsRepository,
     );

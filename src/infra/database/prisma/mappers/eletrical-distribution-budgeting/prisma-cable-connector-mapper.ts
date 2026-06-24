@@ -1,6 +1,8 @@
 import { Prisma } from "prisma/generated/client";
 import { UniqueEntityID } from "src/core/entities/unique-entity-id";
 import { CableConnector as DomainCableConnector } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/cable-connector";
+import { CableConnectorWithDetails as DomainCableConnectorWithDetails } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/cable-connector-with-details";
+import { PrismaCableMapper } from "./prisma-cable-mapper";
 
 type PrismaCableConnectorWithRelations = Prisma.CableConnectorGetPayload<{
   include: {
@@ -28,6 +30,21 @@ export class PrismaCableConnectorMapper {
       },
       new UniqueEntityID(raw.id),
     );
+  }
+  static toDomainWithDetails(
+    raw: PrismaCableConnectorWithRelations,
+  ): DomainCableConnectorWithDetails {
+    return DomainCableConnectorWithDetails.create({
+      id: new UniqueEntityID(raw.id),
+      code: raw.code,
+      description: raw.description,
+      unit: raw.unit,
+      entranceCablesOptions: raw.entranceCables.map(PrismaCableMapper.toDomain),
+      exitCablesOptions:
+        raw.exitCables.length > 0
+          ? raw.exitCables.map(PrismaCableMapper.toDomain)
+          : undefined,
+    });
   }
 
   static toPrismaCreate(

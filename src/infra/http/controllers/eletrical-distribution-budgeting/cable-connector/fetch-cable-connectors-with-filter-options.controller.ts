@@ -42,7 +42,9 @@ export class FetchCableConnectorsWithFilterOptionsController {
     @Query(new ZodValidationPipe(fetchCableConnectorsQuerySchema))
     query: FetchCableConnectorsWithFilterOptionsDto,
   ): Promise<{
-    cableConnectors: ReturnType<typeof CableConnectorPresenter.toHttp>[];
+    cableConnectors: ReturnType<
+      typeof CableConnectorPresenter.toHttpWithDetails
+    >[];
     pagination: {
       actualPage: number;
       actualPageSize: number;
@@ -57,7 +59,9 @@ export class FetchCableConnectorsWithFilterOptionsController {
     const { cableConnectors, pagination } = result.value;
 
     return {
-      cableConnectors: cableConnectors.map(CableConnectorPresenter.toHttp),
+      cableConnectors: cableConnectors.map(
+        CableConnectorPresenter.toHttpWithDetails,
+      ),
       pagination,
     };
   }

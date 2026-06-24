@@ -12,8 +12,10 @@ let sut: EditCableConnectorUseCase;
 
 describe("Edit Cable Connector", () => {
   beforeEach(() => {
-    inMemoryCableConnectorsRepository = new InMemoryCableConnectorsRepository();
     inMemoryCablesRepository = new InMemoryCablesRepository();
+    inMemoryCableConnectorsRepository = new InMemoryCableConnectorsRepository(
+      inMemoryCablesRepository,
+    );
     sut = new EditCableConnectorUseCase(
       inMemoryCableConnectorsRepository,
       inMemoryCablesRepository,

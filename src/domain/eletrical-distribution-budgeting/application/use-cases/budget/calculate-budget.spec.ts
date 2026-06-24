@@ -11,18 +11,23 @@ import { makePoleScrew } from "test/factories/eletrical-distribution-budgeting/m
 import { makeProject } from "test/factories/eletrical-distribution-budgeting/make-project";
 import { makeUtilityPole } from "test/factories/eletrical-distribution-budgeting/make-utility-pole";
 import { InMemoryCableConnectorsRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-cable-connectors-repository";
+import { InMemoryCablesRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-cables-repository";
 import { InMemoryPoleScrewsRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-pole-screws-repository";
 import { ParsedPointToCreate } from "../point/validate-many-points";
 import { CalculateBudgetUseCase } from "./calculate-budget";
 
 let inMemoryPoleScrewsRepository: InMemoryPoleScrewsRepository;
 let inMemoryCableConnectorsRepository: InMemoryCableConnectorsRepository;
+let inMemoryCablesRepository: InMemoryCablesRepository;
 let sut: CalculateBudgetUseCase;
 
 describe("Calculate Budget Use Case", () => {
   beforeEach(() => {
     inMemoryPoleScrewsRepository = new InMemoryPoleScrewsRepository();
-    inMemoryCableConnectorsRepository = new InMemoryCableConnectorsRepository();
+    inMemoryCablesRepository = new InMemoryCablesRepository();
+    inMemoryCableConnectorsRepository = new InMemoryCableConnectorsRepository(
+      inMemoryCablesRepository,
+    );
     sut = new CalculateBudgetUseCase(
       inMemoryPoleScrewsRepository,
       inMemoryCableConnectorsRepository,

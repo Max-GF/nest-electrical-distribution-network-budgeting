@@ -6,11 +6,15 @@ import {
   CableConnectorsRepository,
   FetchCableConnectorsFilterOptions,
 } from "src/domain/eletrical-distribution-budgeting/application/repositories/cable-connectors-repository";
+import { Cable } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/cable";
 import { CableConnector } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/cable-connector";
+import { CableConnectorWithDetails } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/cable-connector-with-details";
+import { InMemoryCablesRepository } from "./in-memory-cables-repository";
 
 export class InMemoryCableConnectorsRepository
   implements CableConnectorsRepository
 {
+  constructor(private cablesRepository: InMemoryCablesRepository) {}
   async getAll(): Promise<CableConnector[]> {
     return this.items;
   }
@@ -40,7 +44,7 @@ export class InMemoryCableConnectorsRepository
     filterOptions: FetchCableConnectorsFilterOptions,
     paginationParams: PaginationParams,
   ): Promise<{
-    cableConnectors: CableConnector[];
+    cableConnectors: CableConnectorWithDetails[];
     pagination: PaginationResponseParams;
   }> {
     const { page, pageSize } = paginationParams;
@@ -55,12 +59,40 @@ export class InMemoryCableConnectorsRepository
       }
       return true;
     });
+    const cables = await this.cablesRepository.findByIds(
+      filteredCableConnectors.flatMap((c) => [
+        ...c.entranceCablesOptionsIds.map((id) => id.toString()),
+        ...(c.exitCablesOptionsIds?.map((id) => id.toString()) ?? []),
+      ]),
+    );
+    const cablesById = new Map<string, Cable>();
+    cables.forEach((c) => cablesById.set(c.id.toString(), c));
 
     const handedData = filteredCableConnectors
       .slice((page - 1) * pageSize, page * pageSize)
       .sort((a, b) => a.code - b.code);
+
+    const cableConnectorsWithDetails = handedData.map((cableConnector) => {
+      const entranceCablesOptions = cableConnector.entranceCablesOptionsIds
+        .map((id) => cablesById.get(id.toString()))
+        .filter((cable): cable is Cable => cable !== undefined);
+      const exitCablesOptions = cableConnector.exitCablesOptionsIds
+        ? cableConnector.exitCablesOptionsIds
+            .map((id) => cablesById.get(id.toString()))
+            .filter((cable): cable is Cable => cable !== undefined)
+        : undefined;
+
+      return CableConnectorWithDetails.create({
+        id: cableConnector.id,
+        code: cableConnector.code,
+        description: cableConnector.description,
+        unit: cableConnector.unit,
+        entranceCablesOptions,
+        exitCablesOptions,
+      });
+    });
     return {
-      cableConnectors: handedData,
+      cableConnectors: cableConnectorsWithDetails,
       pagination: {
         actualPage: page,
         actualPageSize: pageSize,
