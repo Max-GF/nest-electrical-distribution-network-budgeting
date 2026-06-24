@@ -91,7 +91,7 @@ describe("Edit Project (E2E)", () => {
       expect.objectContaining({
         message: "Project edited successfully",
         project: expect.objectContaining({
-          name: "Updated Project Name",
+          name: "UPDATED PROJECT NAME",
         }),
       }),
     );
@@ -102,6 +102,6 @@ describe("Edit Project (E2E)", () => {
       },
     });
 
-    expect(projectOnDatabase?.name).toBe("Updated Project Name");
+    expect(projectOnDatabase?.name).toBe("UPDATED PROJECT NAME");
   });
 });

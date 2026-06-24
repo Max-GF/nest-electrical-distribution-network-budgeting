@@ -1,9 +1,12 @@
 import { faker } from "@faker-js/faker";
+import { Injectable } from "@nestjs/common";
 import { UniqueEntityID } from "src/core/entities/unique-entity-id";
 import {
   UtilityPole,
   UtilityPoleProps,
 } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/utility-pole";
+import { PrismaUtilityPoleMapper } from "src/infra/database/prisma/mappers/eletrical-distribution-budgeting/prisma-utility-pole-mapper";
+import { PrismaService } from "src/infra/database/prisma/prisma.service";
 
 export function makeUtilityPole(
   override: Partial<UtilityPoleProps> = {},
@@ -48,4 +51,19 @@ export function makeUtilityPole(
   );
 
   return utilityPole;
+}
+
+@Injectable()
+export class UtilityPoleFactory {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async makePrismaUtilityPole(
+    data: Partial<UtilityPoleProps> = {},
+  ): Promise<UtilityPole> {
+    const utilityPole = makeUtilityPole(data);
+    await this.prisma.utilityPole.create({
+      data: PrismaUtilityPoleMapper.toPrisma(utilityPole),
+    });
+    return utilityPole;
+  }
 }

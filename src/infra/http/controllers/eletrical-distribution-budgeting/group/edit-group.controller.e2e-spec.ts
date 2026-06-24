@@ -1,55 +1,78 @@
 import { INestApplication } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
 import { Test } from "@nestjs/testing";
 import { GroupItemsRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/group-items-repository";
 import { GroupsRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/groups-repository";
 import { MaterialsRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/materials-repository";
+import { UserRole } from "src/domain/user-management/enterprise/entities/value-objects/user-roles";
 import { AppModule } from "src/infra/app.module";
 import { DatabaseModule } from "src/infra/database/database.module";
 import request from "supertest";
+import { AccessTokenCreator } from "test/access-token-creator";
+import { CableFactory } from "test/factories/eletrical-distribution-budgeting/make-cable";
 import { makeGroup } from "test/factories/eletrical-distribution-budgeting/make-group";
 import { makeGroupItem } from "test/factories/eletrical-distribution-budgeting/make-group-item";
 import { makeMaterial } from "test/factories/eletrical-distribution-budgeting/make-material";
-import { makeBase } from "test/factories/user-management/make-base";
-import { makeCompany } from "test/factories/user-management/make-company";
-import { makeUser } from "test/factories/user-management/make-user";
+import { BaseFactory } from "test/factories/user-management/make-base";
+import { CompanyFactory } from "test/factories/user-management/make-company";
+import { UserFactory } from "test/factories/user-management/make-user";
 
 describe("Edit Group (E2E)", () => {
   let app: INestApplication;
-  let jwt: JwtService;
   let groupsRepository: GroupsRepository;
   let groupItemsRepository: GroupItemsRepository;
   let materialsRepository: MaterialsRepository;
+  let accessTokenCreator: AccessTokenCreator;
+  let companyFactory: CompanyFactory;
+  let baseFactory: BaseFactory;
+  let userFactory: UserFactory;
+  let cableFactory: CableFactory;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule, DatabaseModule],
-      providers: [],
+      providers: [
+        AccessTokenCreator,
+        CompanyFactory,
+        BaseFactory,
+        UserFactory,
+        CableFactory,
+      ],
     }).compile();
 
     app = moduleRef.createNestApplication();
-    jwt = moduleRef.get(JwtService);
     groupsRepository = moduleRef.get(GroupsRepository);
     groupItemsRepository = moduleRef.get(GroupItemsRepository);
     materialsRepository = moduleRef.get(MaterialsRepository);
+    accessTokenCreator = moduleRef.get(AccessTokenCreator);
+    companyFactory = moduleRef.get(CompanyFactory);
+    baseFactory = moduleRef.get(BaseFactory);
+    userFactory = moduleRef.get(UserFactory);
+    cableFactory = moduleRef.get(CableFactory);
 
     await app.init();
   });
 
-  test("[PUT] /groups/:id", async () => {
-    const user = makeUser();
-    const company = makeCompany();
-    const base = makeBase({ companyId: company.id });
-    const accessToken = jwt.sign({
-      sub: user.id.toString(),
-      companyId: company.id.toString(),
-      baseId: base.id.toString(),
-      role: "ADMIN",
-      type: "accessToken",
+  async function getAccessToken() {
+    const testCompany = await companyFactory.makePrismaCompany({});
+    const testBase = await baseFactory.makePrismaBase({
+      companyId: testCompany.id,
     });
+    const user = await userFactory.makePrismaUser({
+      role: UserRole.create("ADMIN"),
+      isActive: true,
+      firstLogin: false,
+      baseId: testBase.id,
+      companyId: testCompany.id,
+    });
+    return accessTokenCreator.execute(user);
+  }
+
+  test("[PUT] /groups/:id", async () => {
+    const accessToken = await getAccessToken();
 
     const material = makeMaterial();
     await materialsRepository.createMany([material]);
+    const cable = await cableFactory.makePrismaCable({});
 
     const group = makeGroup();
     const groupItem = makeGroupItem({
@@ -76,6 +99,14 @@ describe("Edit Group (E2E)", () => {
             description: "Updated Item Description",
             materialId: material.id.toString(),
           },
+
+          {
+            type: "cableConnector",
+            quantity: 2,
+            addByPhase: 1,
+            localCableId: cable.id.toString(),
+            oneSideConnector: false,
+          },
         ],
       });
 
@@ -95,20 +126,15 @@ describe("Edit Group (E2E)", () => {
     expect(groupOnDatabase).toBeTruthy();
     expect(groupOnDatabase?.name).toBe("UPDATED GROUP NAME");
     expect(groupOnDatabase?.tension.value).toBe("LOW");
+
+    const itemsOnDatabase = await groupItemsRepository.findByGroupId(
+      group.id.toString(),
+    );
+    expect(itemsOnDatabase).toHaveLength(2);
   });
 
   test("[PUT] /groups/:id - should remove items from a group", async () => {
-    const user = makeUser();
-    const company = makeCompany();
-    const base = makeBase({ companyId: company.id });
-    const accessToken = jwt.sign({
-      sub: user.id.toString(),
-      companyId: company.id.toString(),
-      baseId: base.id.toString(),
-      role: "ADMIN",
-      type: "accessToken",
-    });
-
+    const accessToken = await getAccessToken();
     const material = makeMaterial();
     await materialsRepository.createMany([material]);
 
@@ -147,16 +173,7 @@ describe("Edit Group (E2E)", () => {
   });
 
   test("[PUT] /groups/:id - should remove and edit items atomically", async () => {
-    const user = makeUser();
-    const company = makeCompany();
-    const base = makeBase({ companyId: company.id });
-    const accessToken = jwt.sign({
-      sub: user.id.toString(),
-      companyId: company.id.toString(),
-      baseId: base.id.toString(),
-      role: "ADMIN",
-      type: "accessToken",
-    });
+    const accessToken = await getAccessToken();
 
     const material1 = makeMaterial();
     const material2 = makeMaterial();
@@ -209,16 +226,7 @@ describe("Edit Group (E2E)", () => {
   });
 
   test("[PUT] /groups/:id - should return 400 when removing item from another group", async () => {
-    const user = makeUser();
-    const company = makeCompany();
-    const base = makeBase({ companyId: company.id });
-    const accessToken = jwt.sign({
-      sub: user.id.toString(),
-      companyId: company.id.toString(),
-      baseId: base.id.toString(),
-      role: "ADMIN",
-      type: "accessToken",
-    });
+    const accessToken = await getAccessToken();
 
     const group1 = makeGroup();
     const group2 = makeGroup();

@@ -1,5 +1,6 @@
 import { Group } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/group";
 import { GroupItemWithDetails } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/group-item-with-details";
+import { CablePresenter } from "./cable-presenter";
 import { MaterialPresenter } from "./material-presenter";
 
 export class GroupPresenter {
@@ -38,7 +39,9 @@ export class GroupPresenter {
       return {
         ...base,
         type: "cableConnector",
-        localCableSectionInMM: item.localCableSectionInMM,
+        localCable: item.localCable
+          ? CablePresenter.toHttp(item.localCable)
+          : undefined,
         oneSideConnector: item.oneSideConnector,
       };
     }

@@ -81,15 +81,15 @@ describe("Create Project (E2E)", () => {
       expect.objectContaining({
         message: "Project created successfully",
         project: expect.objectContaining({
-          name: "New Project",
-          description: "Project Description",
+          name: "NEW PROJECT",
+          description: "PROJECT DESCRIPTION",
         }),
       }),
     );
 
     const projectOnDatabase = await prisma.project.findFirst({
       where: {
-        name: "New Project",
+        name: "NEW PROJECT",
       },
     });
 

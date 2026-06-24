@@ -28,7 +28,7 @@ export class GroupItemPresenter {
     if (groupItem.isCableConnector()) {
       return {
         ...base,
-        localCableSectionInMM: groupItem.localCableSectionInMM,
+        localCableId: groupItem.localCableId?.toString(),
         oneSideConnector: groupItem.oneSideConnector,
       };
     }

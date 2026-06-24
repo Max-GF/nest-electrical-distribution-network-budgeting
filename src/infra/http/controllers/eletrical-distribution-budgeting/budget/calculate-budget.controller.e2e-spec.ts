@@ -1,144 +1,90 @@
 import { INestApplication } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
 import { Test } from "@nestjs/testing";
+import { UserRole } from "src/domain/user-management/enterprise/entities/value-objects/user-roles";
 import { AppModule } from "src/infra/app.module";
 import { DatabaseModule } from "src/infra/database/database.module";
-import { PrismaService } from "src/infra/database/prisma/prisma.service";
+import { CalculateBudgetPresenter } from "src/infra/http/presenters/eletrical-distribution-budgeting/calculate-budget-presenter";
 import request from "supertest";
-import { makeCable } from "test/factories/eletrical-distribution-budgeting/make-cable";
-import { makeCableConnector } from "test/factories/eletrical-distribution-budgeting/make-cable-connectors";
-import { makePoleScrew } from "test/factories/eletrical-distribution-budgeting/make-pole-screw";
-import { makeProject } from "test/factories/eletrical-distribution-budgeting/make-project";
-import { makeUtilityPole } from "test/factories/eletrical-distribution-budgeting/make-utility-pole";
-import { makeBase } from "test/factories/user-management/make-base";
-import { makeCompany } from "test/factories/user-management/make-company";
-import { makeUser } from "test/factories/user-management/make-user";
+import { AccessTokenCreator } from "test/access-token-creator";
+import { CableFactory } from "test/factories/eletrical-distribution-budgeting/make-cable";
+import { CableConnectorFactory } from "test/factories/eletrical-distribution-budgeting/make-cable-connectors";
+import { PoleScrewFactory } from "test/factories/eletrical-distribution-budgeting/make-pole-screw";
+import { ProjectFactory } from "test/factories/eletrical-distribution-budgeting/make-project";
+import { UtilityPoleFactory } from "test/factories/eletrical-distribution-budgeting/make-utility-pole";
+import { BaseFactory } from "test/factories/user-management/make-base";
+import { CompanyFactory } from "test/factories/user-management/make-company";
+import { UserFactory } from "test/factories/user-management/make-user";
 
 describe("Calculate Budget (E2E)", () => {
   let app: INestApplication;
-  let prisma: PrismaService;
-  let jwt: JwtService;
+  let accessTokenCreator: AccessTokenCreator;
+  let companyFactory: CompanyFactory;
+  let baseFactory: BaseFactory;
+  let userFactory: UserFactory;
+  let projectFactory: ProjectFactory;
+  let cableFactory: CableFactory;
+  let utilityPoleFactory: UtilityPoleFactory;
+  let poleScrewFactory: PoleScrewFactory;
+  let cableConnectorFactory: CableConnectorFactory;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule, DatabaseModule],
+      providers: [
+        AccessTokenCreator,
+        CompanyFactory,
+        BaseFactory,
+        UserFactory,
+        ProjectFactory,
+        CableFactory,
+        UtilityPoleFactory,
+        PoleScrewFactory,
+        CableConnectorFactory,
+      ],
     }).compile();
 
     app = moduleRef.createNestApplication();
-    prisma = moduleRef.get(PrismaService);
-    jwt = moduleRef.get(JwtService);
+    accessTokenCreator = moduleRef.get(AccessTokenCreator);
+    companyFactory = moduleRef.get(CompanyFactory);
+    baseFactory = moduleRef.get(BaseFactory);
+    userFactory = moduleRef.get(UserFactory);
+    projectFactory = moduleRef.get(ProjectFactory);
+    cableFactory = moduleRef.get(CableFactory);
+    utilityPoleFactory = moduleRef.get(UtilityPoleFactory);
+    poleScrewFactory = moduleRef.get(PoleScrewFactory);
+    cableConnectorFactory = moduleRef.get(CableConnectorFactory);
 
     await app.init();
   });
 
   test("[POST] /projects/:projectId/budget/calculate", async () => {
-    const company = makeCompany();
-    await prisma.company.create({
-      data: {
-        id: company.id.toString(),
-        name: company.name,
-        cnpj: company.cnpj.value,
-      },
+    const testCompany = await companyFactory.makePrismaCompany({});
+    const testBase = await baseFactory.makePrismaBase({
+      companyId: testCompany.id,
+    });
+    const user = await userFactory.makePrismaUser({
+      role: UserRole.create("ADMIN"),
+      isActive: true,
+      firstLogin: false,
+      baseId: testBase.id,
+      companyId: testCompany.id,
+    });
+    const accessToken = accessTokenCreator.execute(user);
+
+    const project = await projectFactory.makePrismaProject({
+      budgetAlreadyCalculated: false,
     });
 
-    const base = makeBase({ companyId: company.id });
-    await prisma.base.create({
-      data: {
-        id: base.id.toString(),
-        name: base.name,
-        companyId: base.companyId.toString(),
-      },
+    const cable = await cableFactory.makePrismaCable({});
+    const utilityPole = await utilityPoleFactory.makePrismaUtilityPole({});
+
+    await poleScrewFactory.makePrismaPoleScrew({
+      lengthInMM: 500,
     });
 
-    const user = makeUser({ companyId: company.id, baseId: base.id });
-    await prisma.user.create({
-      data: {
-        id: user.id.toString(),
-        name: user.name,
-        email: user.email,
-        password: user.password,
-        cpf: user.cpf.value,
-        role: user.role.value,
-        companyId: user.companyId.toString(),
-        baseId: user.baseId.toString(),
-      },
-    });
-
-    const project = makeProject({ budgetAlreadyCalculated: false });
-    await prisma.project.create({
-      data: {
-        id: project.id.toString(),
-        name: project.name,
-        description: project.description,
-        budgetAlreadyCalculated: project.budgetAlreadyCalculated,
-        lastBudgetCalculatedAt: project.lastBudgetCalculatedAt,
-      },
-    });
-
-    const cable = makeCable();
-    await prisma.cable.create({
-      data: {
-        id: cable.id.toString(),
-        code: cable.code,
-        description: cable.description,
-        unit: cable.unit,
-        tension: cable.tension.value,
-        sectionAreaInMM: cable.sectionAreaInMM,
-      },
-    });
-
-    const utilityPole = makeUtilityPole();
-    await prisma.utilityPole.create({
-      data: {
-        id: utilityPole.id.toString(),
-        code: utilityPole.code,
-        description: utilityPole.description,
-        unit: utilityPole.unit,
-        strongSideSectionMultiplier: utilityPole.strongSideSectionMultiplier,
-        mediumVoltageLevelsCount: utilityPole.mediumVoltageLevelsCount,
-        mediumVoltageStartSectionLengthInMM:
-          utilityPole.mediumVoltageStartSectionLengthInMM,
-        mediumVoltageSectionLengthAddBylevelInMM:
-          utilityPole.mediumVoltageSectionLengthAddBylevelInMM,
-        lowVoltageLevelsCount: utilityPole.lowVoltageLevelsCount,
-        lowVoltageStartSectionLengthInMM:
-          utilityPole.lowVoltageStartSectionLengthInMM,
-        lowVoltageSectionLengthAddBylevelInMM:
-          utilityPole.lowVoltageSectionLengthAddBylevelInMM,
-      },
-    });
-
-    const poleScrew = makePoleScrew();
-    await prisma.poleScrew.create({
-      data: {
-        id: poleScrew.id.toString(),
-        code: poleScrew.code,
-        description: poleScrew.description,
-        unit: poleScrew.unit,
-        lengthInMM: poleScrew.lengthInMM,
-      },
-    });
-
-    const cableConnector = makeCableConnector();
-    await prisma.cableConnector.create({
-      data: {
-        id: cableConnector.id.toString(),
-        code: cableConnector.code,
-        description: cableConnector.description,
-        unit: cableConnector.unit,
-        entranceMinValueMM: cableConnector.entranceMinValueMM,
-        entranceMaxValueMM: cableConnector.entranceMaxValueMM,
-        exitMinValueMM: cableConnector.exitMinValueMM,
-        exitMaxValueMM: cableConnector.exitMaxValueMM,
-      },
-    });
-
-    const accessToken = jwt.sign({
-      sub: user.id.toString(),
-      role: user.role.value,
-      baseId: user.baseId.toString(),
-      companyId: user.companyId.toString(),
-      type: "accessToken",
+    await cableConnectorFactory.makePrismaCableConnector({
+      entranceCablesOptionsIds: [cable.id],
+      exitCablesOptionsIds: [],
     });
 
     const response = await request(app.getHttpServer())
@@ -172,5 +118,19 @@ describe("Calculate Budget (E2E)", () => {
         }),
       ]),
     );
+
+    const materials = response.body.projectMaterials as ReturnType<
+      typeof CalculateBudgetPresenter.toHTTP
+    >[];
+    const hasPole = materials.some(
+      (m) =>
+        m.itemType === "utilityPole" && m.itemId === utilityPole.id.toString(),
+    );
+    const hasCable = materials.some(
+      (m) => m.itemType === "cable" && m.itemId === cable.id.toString(),
+    );
+
+    expect(hasPole).toBeTruthy();
+    expect(hasCable).toBeTruthy();
   });
 });

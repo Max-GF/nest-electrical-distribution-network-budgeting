@@ -29,7 +29,7 @@ const editGroupItemSchema = z.object({
   type: z.enum(["material", "poleScrew", "cableConnector"]).optional(),
   materialId: z.string().uuid().optional(),
   lengthAdd: z.number().optional(),
-  localCableSectionInMM: z.number().optional(),
+  localCableId: z.string().uuid().optional(),
   oneSideConnector: z.boolean().optional(),
 });
 
@@ -97,8 +97,8 @@ export class EditGroupController {
             quantity: item.quantity ?? 0,
             addByPhase: item.addByPhase,
             description: item.description,
-            localCableSectionInMM: item.localCableSectionInMM ?? 0,
-            oneSideConnector: item.oneSideConnector ?? false,
+            localCableId: item.localCableId,
+            oneSideConnector: item.oneSideConnector,
           };
         }
       }),
