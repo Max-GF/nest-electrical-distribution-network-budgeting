@@ -48,12 +48,14 @@ describe("Calculate Budget Use Case", () => {
       screwMedium,
     ]);
 
+    const cableEntrance = makeCable({}, new UniqueEntityID("cable-in"));
+    const cableExit = makeCable({}, new UniqueEntityID("cable-out"));
+
+    // O Connector agora precisa ser criado com os IDs dos cabos nas suas opções
     const connector = makeCableConnector(
       {
-        entranceMinValueMM: 10,
-        entranceMaxValueMM: 50,
-        exitMinValueMM: 10,
-        exitMaxValueMM: 50,
+        entranceCablesOptionsIds: [cableEntrance.id],
+        exitCablesOptionsIds: [cableExit.id],
       },
       new UniqueEntityID("connector-univ"),
     );
@@ -65,14 +67,6 @@ describe("Calculate Budget Use Case", () => {
 
     vi.spyOn(utilityPole, "calculateSectionLengthInMM").mockReturnValue(200);
 
-    const cableEntrance = makeCable(
-      { sectionAreaInMM: 25 },
-      new UniqueEntityID("cable-in"),
-    );
-    const cableExit = makeCable(
-      { sectionAreaInMM: 25 },
-      new UniqueEntityID("cable-out"),
-    );
     const group = makeGroup({}, new UniqueEntityID("group-1"));
     const material = makeMaterial({}, new UniqueEntityID("mat-1"));
 
@@ -112,7 +106,7 @@ describe("Calculate Budget Use Case", () => {
               groupId: group.id,
               quantity: 3,
               type: "cableConnector",
-              localCableSectionInMM: 0,
+              localCableId: undefined, // Testando conector rede-rede (pegará o cabo exit da rede)
               oneSideConnector: false,
             }),
           ],
@@ -154,14 +148,13 @@ describe("Calculate Budget Use Case", () => {
   });
 
   it("should return ResourceNotFoundError if no suitable pole screw is found (too large required)", async () => {
-    // Setup: Apenas parafusos pequenos
     await inMemoryPoleScrewsRepository.createMany([
       makePoleScrew({ lengthInMM: 100 }, new UniqueEntityID("small-screw")),
     ]);
 
     const project = makeProject({});
     const utilityPole = makeUtilityPole({});
-    vi.spyOn(utilityPole, "calculateSectionLengthInMM").mockReturnValue(500); // Poste muito grosso
+    vi.spyOn(utilityPole, "calculateSectionLengthInMM").mockReturnValue(500);
 
     const group = makeGroup({});
 
@@ -226,7 +219,6 @@ describe("Calculate Budget Use Case", () => {
               groupId: group.id,
               quantity: 1,
               type: "cableConnector",
-              localCableSectionInMM: 0,
               oneSideConnector: false,
             }),
           ],
@@ -248,14 +240,14 @@ describe("Calculate Budget Use Case", () => {
     }
   });
 
-  it("should return NotAllowedError for two-side connector without exit cable", async () => {
+  it("should return NotAllowedError for two-side connector without exit cable defined", async () => {
     await inMemoryCableConnectorsRepository.createMany([
       makeCableConnector({}),
     ]);
 
     const project = makeProject({});
     const group = makeGroup({});
-    const cableEntrance = makeCable({ sectionAreaInMM: 50 });
+    const cableEntrance = makeCable({});
 
     const parsedPoint: ParsedPointToCreate = {
       point: makePoint({}),
@@ -279,7 +271,7 @@ describe("Calculate Budget Use Case", () => {
               quantity: 1,
               type: "cableConnector",
               oneSideConnector: false,
-              localCableSectionInMM: 0,
+              localCableId: undefined, // E a rede também não tem cabo de saída definido
             }),
           ],
         },
@@ -294,23 +286,25 @@ describe("Calculate Budget Use Case", () => {
     expect(result.isLeft()).toBeTruthy();
     if (result.isLeft()) {
       expect(result.value).toBeInstanceOf(NotAllowedError);
-      expect(result.value.message).toContain("Exit cable section is required");
+      expect(result.value.message).toContain(
+        "Exit cable or local cable is required to calculate cable connector for two-side connectors",
+      );
     }
   });
 
-  it("should return ResourceNotFoundError if no suitable cable connector matches dimensions", async () => {
-    // Repo tem apenas conectores pequenos (max 10mm)
+  it("should return ResourceNotFoundError if no suitable cable connector matches cable IDs", async () => {
+    const wrongCableId = new UniqueEntityID("wrong-id");
+    const rightCableId = new UniqueEntityID("right-id");
+
     await inMemoryCableConnectorsRepository.createMany([
-      makeCableConnector(
-        { entranceMaxValueMM: 10 },
-        new UniqueEntityID("small-conn"),
-      ),
+      makeCableConnector({
+        entranceCablesOptionsIds: [wrongCableId], // Conector do repositório não atende
+      }),
     ]);
 
     const project = makeProject({});
     const group = makeGroup({});
-    // Cabo de 100mm (muito grande)
-    const cableEntrance = makeCable({ sectionAreaInMM: 100 });
+    const cableEntrance = makeCable({}, rightCableId); // Cabo que está sendo pedido
 
     const parsedPoint: ParsedPointToCreate = {
       point: makePoint({}),
@@ -333,8 +327,7 @@ describe("Calculate Budget Use Case", () => {
               groupId: group.id,
               quantity: 1,
               type: "cableConnector",
-              localCableSectionInMM: 0,
-              oneSideConnector: true, // Ignora saída, mas entrada falhará
+              oneSideConnector: true,
             }),
           ],
         },
@@ -350,7 +343,7 @@ describe("Calculate Budget Use Case", () => {
     if (result.isLeft()) {
       expect(result.value).toBeInstanceOf(ResourceNotFoundError);
       expect(result.value.message).toContain(
-        "No suitable cable connector found",
+        "No suitable cable connector found for config",
       );
     }
   });

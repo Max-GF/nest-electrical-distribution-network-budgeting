@@ -81,11 +81,6 @@ export class InMemoryGroupItemsRepository implements GroupItemsRepository {
           });
         }
         if (item.isCableConnector()) {
-          if (!item.localCableSectionInMM) {
-            throw new Error(
-              `localCableSectionInMM is required for CableConnector GroupItem ${item.id.toString()}`,
-            );
-          }
           return GroupItemWithDetails.createCableConnector({
             addByPhase: item.addByPhase,
             groupId: item.groupId,
@@ -93,7 +88,7 @@ export class InMemoryGroupItemsRepository implements GroupItemsRepository {
             type: item.type,
             description: item.description,
             groupItemId: item.id,
-            localCableSectionInMM: item.localCableSectionInMM,
+            localCableId: item.localCableId,
           });
         }
         return null;
@@ -153,11 +148,6 @@ export class InMemoryGroupItemsRepository implements GroupItemsRepository {
           });
         }
         if (item.isCableConnector()) {
-          if (!item.localCableSectionInMM) {
-            throw new Error(
-              `localCableSectionInMM is required for CableConnector GroupItem ${item.id.toString()}`,
-            );
-          }
           return GroupItemWithDetails.createCableConnector({
             addByPhase: item.addByPhase,
             groupId: item.groupId,
@@ -165,7 +155,7 @@ export class InMemoryGroupItemsRepository implements GroupItemsRepository {
             type: item.type,
             description: item.description,
             groupItemId: item.id,
-            localCableSectionInMM: item.localCableSectionInMM,
+            localCableId: item.localCableId,
           });
         }
         return null;

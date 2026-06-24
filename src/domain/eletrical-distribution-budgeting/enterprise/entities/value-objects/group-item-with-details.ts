@@ -116,9 +116,9 @@ export class GroupItemWithDetails<
     return this.props.type === "cableConnector";
   }
 
-  get localCableSectionInMM(): number {
+  get localCableId(): UniqueEntityID | undefined {
     if (this.isCableConnector()) {
-      return this.props.localCableSectionInMM;
+      return this.props.localCableId;
     }
     throw new Error(
       "This GroupItemWithDetails is not of type 'cableConnector'",

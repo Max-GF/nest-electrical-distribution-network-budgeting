@@ -47,7 +47,7 @@ export function makeGroupItem(
         quantity: faker.number.int({ min: 1, max: 100 }),
         addByPhase: faker.number.int({ min: 0, max: 3 }),
         description: faker.lorem.sentence(),
-        localCableSectionInMM: faker.number.int({ min: 1, max: 50 }),
+        localCableId: new UniqueEntityID(),
         type: "cableConnector",
         ...override,
       },

@@ -3,15 +3,18 @@ import { AlreadyRegisteredError } from "src/core/errors/generics/already-registe
 import { NotAllowedError } from "src/core/errors/generics/not-allowed-error";
 import { ResourceNotFoundError } from "src/core/errors/generics/resource-not-found-error";
 import { TensionLevel } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
+import { makeCable } from "test/factories/eletrical-distribution-budgeting/make-cable";
 import { makeGroup } from "test/factories/eletrical-distribution-budgeting/make-group";
 import { makeGroupItem } from "test/factories/eletrical-distribution-budgeting/make-group-item";
 import { makeMaterial } from "test/factories/eletrical-distribution-budgeting/make-material";
+import { InMemoryCablesRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-cables-repository";
 import { InMemoryGroupItemsRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-group-items-repository";
 import { InMemoryGroupsRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-groups-repository";
 import { InMemoryMaterialsRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-materials-repository";
 import { EditGroupUseCase } from "./edit-group";
 
 let inMemoryMaterialsRepository: InMemoryMaterialsRepository;
+let inMemoryCablesRepository: InMemoryCablesRepository;
 let inMemoryGroupItemsRepository: InMemoryGroupItemsRepository;
 let inMemoryGroupsRepository: InMemoryGroupsRepository;
 let sut: EditGroupUseCase;
@@ -19,6 +22,7 @@ let sut: EditGroupUseCase;
 describe("Edit Group", () => {
   beforeEach(() => {
     inMemoryMaterialsRepository = new InMemoryMaterialsRepository();
+    inMemoryCablesRepository = new InMemoryCablesRepository();
     inMemoryGroupItemsRepository = new InMemoryGroupItemsRepository(
       inMemoryMaterialsRepository,
     );
@@ -29,11 +33,12 @@ describe("Edit Group", () => {
       inMemoryGroupsRepository,
       inMemoryGroupItemsRepository,
       inMemoryMaterialsRepository,
+      inMemoryCablesRepository,
     );
   });
 
   it("should be able to edit a group", async () => {
-    // Create initial group with items
+    // Setup: Grupo inicial e itens
     const group = makeGroup({
       name: "OLD GROUP",
       description: "old description",
@@ -54,9 +59,9 @@ describe("Edit Group", () => {
     const groupItem3 = makeGroupItem({
       groupId: group.id,
       type: "cableConnector",
-      localCableSectionInMM: 10,
+      localCableId: new UniqueEntityID("old-cable-id"),
       addByPhase: 3,
-      oneSideConnector: true,
+      oneSideConnector: false,
     });
 
     await inMemoryGroupItemsRepository.createMany([
@@ -65,12 +70,17 @@ describe("Edit Group", () => {
       groupItem3,
     ]);
 
-    // Create materials for validation
+    // Setup: Criação de Materiais e Cabos para validação
     await inMemoryMaterialsRepository.createMany([
       makeMaterial({}, new UniqueEntityID("material-1")),
       makeMaterial({}, new UniqueEntityID("new-material")),
     ]);
 
+    await inMemoryCablesRepository.createMany([
+      makeCable({}, new UniqueEntityID("new-cable-id")),
+    ]);
+
+    // Ação
     const result = await sut.execute({
       groupToEditId: group.id.toString(),
       name: "UPDATED GROUP",
@@ -81,25 +91,26 @@ describe("Edit Group", () => {
           type: "material",
           materialId: "new-material",
           quantity: 5,
-          groupItemId: groupItem1.id.toString(),
+          groupItemId: groupItem1.id.toString(), // Editando o item 1
         },
         {
           type: "cableConnector",
           quantity: 3,
-          localCableSectionInMM: 15,
-          description: "new cable connector",
-          oneSideConnector: true,
+          description: "new cable connector as strap",
+          oneSideConnector: true, // Adicionando um novo
         },
         {
-          groupItemId: groupItem3.id.toString(),
+          groupItemId: groupItem3.id.toString(), // Editando o item 3
           type: "cableConnector",
           quantity: 3,
-          localCableSectionInMM: 15,
-          description: "Edited cable connector- one side false",
+          localCableId: "new-cable-id", // Trocando o cabo
+          description: "Edited cable connector with new cable",
           oneSideConnector: false,
         },
       ],
     });
+
+    // Asserts
     expect(result.isRight()).toBeTruthy();
     if (result.isRight()) {
       expect(inMemoryGroupsRepository.items[0].name).toBe("UPDATED GROUP");
@@ -108,12 +119,12 @@ describe("Edit Group", () => {
       );
       expect(inMemoryGroupsRepository.items[0].tension.value).toBe("LOW");
 
-      // Check items were updated correctly
       const updatedItems = inMemoryGroupItemsRepository.items.filter(
         (item) => item.groupId.toString() === group.id.toString(),
       );
 
-      expect(updatedItems).toHaveLength(4); // Three existing updated + one new added
+      expect(updatedItems).toHaveLength(4); // 3 editados/mantidos + 1 novo
+
       expect(updatedItems[0]).toEqual(
         expect.objectContaining({
           props: expect.objectContaining({
@@ -123,32 +134,34 @@ describe("Edit Group", () => {
           }),
         }),
       );
+
       expect(updatedItems[1]).toEqual(
         expect.objectContaining({
           props: expect.objectContaining({
             type: "poleScrew",
-            lengthAdd: 10,
+            lengthAdd: 10, // Intacto
           }),
         }),
       );
+
       expect(updatedItems[2]).toEqual(
         expect.objectContaining({
           props: expect.objectContaining({
             type: "cableConnector",
-            localCableSectionInMM: 15,
+            localCableId: expect.objectContaining({ value: "new-cable-id" }), // Cabo trocado
             quantity: 3,
-            description: "Edited cable connector- one side false",
+            description: "Edited cable connector with new cable",
             oneSideConnector: false,
           }),
         }),
       );
+
       expect(updatedItems[3]).toEqual(
         expect.objectContaining({
           props: expect.objectContaining({
             type: "cableConnector",
-            localCableSectionInMM: 15,
             quantity: 3,
-            description: "new cable connector",
+            description: "new cable connector as strap",
             oneSideConnector: true,
           }),
         }),
@@ -208,11 +221,11 @@ describe("Edit Group", () => {
     }
   });
 
-  it("should not be able to edit a group with negative values for context items", async () => {
+  it("should not be able to edit a group with negative values for context items (pole screw)", async () => {
     const group = makeGroup();
     await inMemoryGroupsRepository.createMany([group]);
 
-    const result1 = await sut.execute({
+    const result = await sut.execute({
       groupToEditId: group.id.toString(),
       items: [
         {
@@ -223,31 +236,34 @@ describe("Edit Group", () => {
       ],
     });
 
-    expect(result1.isLeft()).toBeTruthy();
-    if (result1.isLeft()) {
-      expect(result1.value).toBeInstanceOf(NotAllowedError);
-      expect(result1.value.message).toBe(
+    expect(result.isLeft()).toBeTruthy();
+    if (result.isLeft()) {
+      expect(result.value).toBeInstanceOf(NotAllowedError);
+      expect(result.value.message).toBe(
         'Item of type "poleScrew" must have a positive value for "lengthAdd".',
       );
     }
+  });
+  it("should not be able to edit a group with non-existent local cable", async () => {
+    const group = makeGroup();
+    await inMemoryGroupsRepository.createMany([group]);
 
-    const result2 = await sut.execute({
+    const result = await sut.execute({
       groupToEditId: group.id.toString(),
       items: [
         {
           type: "cableConnector",
-          quantity: 3,
-          localCableSectionInMM: -5,
-          oneSideConnector: true,
+          localCableId: "non-existent-cable",
+          quantity: 5,
         },
       ],
     });
 
-    expect(result2.isLeft()).toBeTruthy();
-    if (result2.isLeft()) {
-      expect(result2.value).toBeInstanceOf(NotAllowedError);
-      expect(result2.value.message).toBe(
-        'Item of type "cableConnector" must have a positive value for "localCableSectionInMM".',
+    expect(result.isLeft()).toBeTruthy();
+    if (result.isLeft()) {
+      expect(result.value).toBeInstanceOf(ResourceNotFoundError);
+      expect(result.value.message).toBe(
+        "Local Cables with missing IDs: non-existent-cable",
       );
     }
   });
@@ -269,7 +285,7 @@ describe("Edit Group", () => {
 
     expect(result.isLeft()).toBeTruthy();
     if (result.isLeft()) {
-      expect(result.value).toBeInstanceOf(NotAllowedError);
+      expect(result.value).toBeInstanceOf(ResourceNotFoundError);
       expect(result.value.message).toBe(
         "Materials with missing IDs: non-existent-material",
       );

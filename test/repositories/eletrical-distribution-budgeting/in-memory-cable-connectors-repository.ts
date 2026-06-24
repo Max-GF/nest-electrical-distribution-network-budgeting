@@ -11,6 +11,9 @@ import { CableConnector } from "src/domain/eletrical-distribution-budgeting/ente
 export class InMemoryCableConnectorsRepository
   implements CableConnectorsRepository
 {
+  async getAll(): Promise<CableConnector[]> {
+    return this.items;
+  }
   public items: CableConnector[] = [];
   async createMany(cableConnectors: CableConnector[]): Promise<void> {
     this.items.push(...cableConnectors);

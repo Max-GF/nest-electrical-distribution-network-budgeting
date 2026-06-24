@@ -21,8 +21,11 @@ export interface GroupPoleScrewProps extends GroupItemBaseProps {
 
 export interface GroupCableConnectorProps extends GroupItemBaseProps {
   type: "cableConnector";
-  localCableSectionInMM: number;
-  oneSideConnector?: boolean; // Para alças e laços, que consideram apenas uma espessura de cabo
+  localCableId?: UniqueEntityID;
+  // Regra 1: Define se é alça/laço (ignorando a saída)
+  oneSideConnector?: boolean;
+  // Regra 2 é implícita: Se oneSideConnector for falso/undefined e
+  // localCableId for undefined, trata-se de um conector Rede-Rede.
 }
 
 export type GroupItemProps =
@@ -72,7 +75,6 @@ export class GroupItem<
     );
   }
 
-  // Getters comuns
   get groupId(): UniqueEntityID {
     return this.props.groupId;
   }
@@ -108,6 +110,7 @@ export class GroupItem<
   isMaterial(): this is GroupItem<GroupMaterialProps> {
     return this.props.type === "material";
   }
+
   get materialId(): UniqueEntityID {
     if (this.isMaterial()) {
       return this.props.materialId;
@@ -118,6 +121,7 @@ export class GroupItem<
   isPoleScrew(): this is GroupItem<GroupPoleScrewProps> {
     return this.props.type === "poleScrew";
   }
+
   get lengthAdd(): number | undefined {
     if (this.isPoleScrew()) {
       return this.props.lengthAdd;
@@ -127,11 +131,13 @@ export class GroupItem<
   isCableConnector(): this is GroupItem<GroupCableConnectorProps> {
     return this.props.type === "cableConnector";
   }
-  get localCableSectionInMM(): number | undefined {
+
+  get localCableId(): UniqueEntityID | undefined {
     if (this.isCableConnector()) {
-      return this.props.localCableSectionInMM;
+      return this.props.localCableId;
     }
   }
+
   get oneSideConnector(): boolean | undefined {
     if (this.isCableConnector()) {
       return this.props.oneSideConnector;

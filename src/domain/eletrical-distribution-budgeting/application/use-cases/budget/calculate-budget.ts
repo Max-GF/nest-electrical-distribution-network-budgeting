@@ -45,11 +45,11 @@ export class CalculateBudgetUseCase {
   }: CalculateBudgetUseCaseRequest): Promise<CalculateBudgetUseCaseResponse> {
     const allProjectMaterials: ProjectMaterial[] = [];
 
-    const [orderedByLengthPoleScrews, orderedByLengthCableConnectors] =
-      await Promise.all([
-        this.poleScrewsRepository.getAllOrderedByLength(),
-        this.cableConnectorsRepository.getAllOrderedByLength(),
-      ]);
+    const [orderedByLengthPoleScrews, allCableConnectors] = await Promise.all([
+      this.poleScrewsRepository.getAllOrderedByLength(),
+      // Agora pegamos todos sem ordem específica, já que a busca é por ID exato
+      this.cableConnectorsRepository.getAll(),
+    ]);
 
     // 2. Itera sobre os pontos já parseados/validados
     for (const parsedPoint of parsedPoints) {
@@ -57,7 +57,7 @@ export class CalculateBudgetUseCase {
         project,
         parsedPoint,
         orderedByLengthPoleScrews,
-        orderedByLengthCableConnectors,
+        allCableConnectors,
       });
 
       if (calculatedMaterialsResult.isLeft()) {
@@ -74,16 +74,17 @@ export class CalculateBudgetUseCase {
       projectMaterials: allProjectMaterials,
     });
   }
+
   async calculatePointMaterials({
     project,
     parsedPoint,
     orderedByLengthPoleScrews,
-    orderedByLengthCableConnectors,
+    allCableConnectors,
   }: {
     project: Project;
     parsedPoint: ParsedPointToCreate;
     orderedByLengthPoleScrews: PoleScrew[];
-    orderedByLengthCableConnectors: CableConnector[];
+    allCableConnectors: CableConnector[];
   }): Promise<
     Either<ResourceNotFoundError, { projectMaterials: ProjectMaterial[] }>
   > {
@@ -158,7 +159,7 @@ export class CalculateBudgetUseCase {
           pointId: point.id,
           projectId: project.id,
         },
-        orderedByLengthCableConnectors,
+        allCableConnectors,
       );
       if (groupCableConnectors.isLeft()) {
         return left(groupCableConnectors.value);
@@ -260,6 +261,7 @@ export class CalculateBudgetUseCase {
     }
     return right(calculatedGroupPoleScrews);
   }
+
   async calculateGroupCableConnectors(
     {
       groupId,
@@ -278,7 +280,7 @@ export class CalculateBudgetUseCase {
       tensionLevel: "LOW" | "MEDIUM";
       level: number;
     },
-    orderedByLengthCableConnectors: CableConnector[],
+    allCableConnectors: CableConnector[],
   ): Promise<
     Either<ResourceNotFoundError | NotAllowedError, ProjectMaterial[]>
   > {
@@ -299,34 +301,46 @@ export class CalculateBudgetUseCase {
           ),
         );
       }
-      const requiredEntrance = cablesToUse.entranceCable.cable.sectionAreaInMM;
-      const requiredExit = cableConnectorItem.oneSideConnector
-        ? 0
-        : cableConnectorItem.localCableSectionInMM ||
-          cablesToUse.exitCable?.cable.sectionAreaInMM ||
-          0;
 
-      if (requiredExit === 0 && !cableConnectorItem.oneSideConnector) {
-        return left(
-          new NotAllowedError(
-            `Exit cable section is required to calculate cable connector for two-side connectors`,
-          ),
-        );
+      // Pegamos o ID do cabo real que está entrando
+      const requiredEntranceCableId = cablesToUse.entranceCable.cable.id;
+
+      // Definimos o ID do cabo de saída
+      let requiredExitCableId: UniqueEntityID | undefined = undefined;
+
+      if (!cableConnectorItem.oneSideConnector) {
+        // Se o item de grupo exige um cabo local, nós usamos o ID desse cabo local.
+        // CASO CONTRÁRIO, usamos o ID do cabo de saída da rede.
+        if (cableConnectorItem.localCableId) {
+          requiredExitCableId = cableConnectorItem.localCableId;
+        } else if (cablesToUse.exitCable) {
+          requiredExitCableId = cablesToUse.exitCable.cable.id;
+        } else {
+          return left(
+            new NotAllowedError(
+              `Exit cable or local cable is required to calculate cable connector for two-side connectors`,
+            ),
+          );
+        }
       }
+
       const suitableCableConnector = this.findSuitableCableConnector(
         {
-          requiredEntrance,
-          requiredExit,
+          requiredEntranceCableId,
+          requiredExitCableId,
+          isOneSideConnector: cableConnectorItem.oneSideConnector,
         },
-        orderedByLengthCableConnectors,
+        allCableConnectors,
       );
+
       if (!suitableCableConnector) {
         return left(
           new ResourceNotFoundError(
-            `No suitable cable connector found for config: Entrance ${requiredEntrance}mm, Exit ${requiredExit}mm`,
+            `No suitable cable connector found for config: Entrance Cable ID [${requiredEntranceCableId.toString()}], Exit Cable ID [${requiredExitCableId?.toString() || "None"}]`,
           ),
         );
       }
+
       calculatedGroupCableConnectors.push(
         ProjectMaterial.create({
           quantity: cableConnectorItem.quantity,
@@ -344,6 +358,7 @@ export class CalculateBudgetUseCase {
     }
     return right(calculatedGroupCableConnectors);
   }
+
   private findSuitablePoleScrew(
     requiredLength: number,
     sortedPoleScrews: PoleScrew[],
@@ -366,21 +381,41 @@ export class CalculateBudgetUseCase {
 
     return bestFit;
   }
+
   private findSuitableCableConnector(
     {
-      requiredEntrance,
-      requiredExit,
-    }: { requiredEntrance: number; requiredExit: number },
-    sortedCableConnectors: CableConnector[],
+      requiredEntranceCableId,
+      requiredExitCableId,
+      isOneSideConnector,
+    }: {
+      requiredEntranceCableId: UniqueEntityID;
+      requiredExitCableId?: UniqueEntityID;
+      isOneSideConnector?: boolean;
+    },
+    allCableConnectors: CableConnector[],
   ): CableConnector | null {
-    const suitableConnectors = sortedCableConnectors.find((connector) => {
-      return (
-        connector.entranceMinValueMM <= requiredEntrance &&
-        requiredEntrance <= connector.entranceMaxValueMM &&
-        connector.exitMinValueMM <= requiredExit &&
-        requiredExit <= connector.exitMaxValueMM
+    const suitableConnector = allCableConnectors.find((connector) => {
+      // Regra 1: O conector DEVE ter o cabo de entrada nas suas opções
+      const matchesEntrance = connector.entranceCablesOptionsIds.some((id) =>
+        id.equals(requiredEntranceCableId),
       );
+
+      if (!matchesEntrance) return false;
+
+      // Regra 2: Se for conector de um lado só ("alça"/strap), fechou! É esse.
+      if (isOneSideConnector) return true;
+
+      // Regra 3: Se precisa conectar dois lados, o conector DEVE ter o cabo de saída nas opções
+      if (!requiredExitCableId) return false; // Fail-safe (já testado antes, mas garante a tipagem)
+
+      const matchesExit =
+        connector.exitCablesOptionsIds?.some((id) =>
+          id.equals(requiredExitCableId),
+        ) || false;
+
+      return matchesExit;
     });
-    return suitableConnectors || null;
+
+    return suitableConnector || null;
   }
 }

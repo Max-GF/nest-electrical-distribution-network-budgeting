@@ -22,4 +22,5 @@ export abstract class CableConnectorsRepository {
     cableConnectors: CableConnector[];
     pagination: PaginationResponseParams;
   }>;
+  abstract getAll(): Promise<CableConnector[]>;
 }

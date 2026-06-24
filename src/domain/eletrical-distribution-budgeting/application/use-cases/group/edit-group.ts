@@ -7,6 +7,7 @@ import { ResourceNotFoundError } from "src/core/errors/generics/resource-not-fou
 import { Group } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/group";
 import { GroupItem } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/group-item";
 import { TensionLevel } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
+import { CablesRepository } from "../../repositories/cables-repository";
 import { GroupItemsRepository } from "../../repositories/group-items-repository";
 import { GroupsRepository } from "../../repositories/groups-repository";
 import { MaterialsRepository } from "../../repositories/materials-repository";
@@ -55,6 +56,7 @@ export class EditGroupUseCase {
     private groupsRepository: GroupsRepository,
     private groupItemsRepository: GroupItemsRepository,
     private materialsRepository: MaterialsRepository,
+    private cablesRepository: CablesRepository,
   ) {}
 
   async execute(
@@ -64,6 +66,7 @@ export class EditGroupUseCase {
     let updatedItems: GroupItem[] = [];
     let newItems: GroupItem[] = [];
     const actualGroupItemsIdsSet = new Set<string>();
+
     if (this.noEntries(editRequest)) {
       return left(
         new NotAllowedError(
@@ -71,6 +74,7 @@ export class EditGroupUseCase {
         ),
       );
     }
+
     const {
       groupToEditId,
       description,
@@ -81,6 +85,7 @@ export class EditGroupUseCase {
     } = editRequest;
 
     const groupToEdit = await this.groupsRepository.findById(groupToEditId);
+
     if (!groupToEdit) {
       return left(
         new ResourceNotFoundError(
@@ -88,7 +93,8 @@ export class EditGroupUseCase {
         ),
       );
     }
-    if (name && name !== groupToEdit.name) {
+
+    if (name && name.toUpperCase() !== groupToEdit.name) {
       const existingGroup = await this.groupsRepository.findByName(name);
       if (existingGroup) {
         return left(
@@ -105,6 +111,7 @@ export class EditGroupUseCase {
       groupToEdit.description = description;
       hasToEdit.group = true;
     }
+
     if (tension && tension.toUpperCase() !== groupToEdit.tension.value) {
       const upperCasedTension = tension.toUpperCase();
       if (!TensionLevel.isValid(upperCasedTension)) {
@@ -115,8 +122,8 @@ export class EditGroupUseCase {
       groupToEdit.tension = TensionLevel.create(upperCasedTension);
       hasToEdit.group = true;
     }
+
     if (items && items.length > 0) {
-      hasToEdit.items = true;
       const { materials, poleScrews, cableConnectors } =
         this.classifyItems(items);
 
@@ -124,13 +131,17 @@ export class EditGroupUseCase {
       if (materialValidation.isLeft()) {
         return left(materialValidation.value);
       }
-      const contextItemsValidation = this.validateContextItems([
-        ...poleScrews,
-        ...cableConnectors,
-      ]);
+
+      const cablesValidation = await this.validateLocalCables(cableConnectors);
+      if (cablesValidation.isLeft()) {
+        return left(cablesValidation.value);
+      }
+
+      const contextItemsValidation = this.validateContextItems(poleScrews);
       if (contextItemsValidation.isLeft()) {
         return left(contextItemsValidation.value);
       }
+
       const actualGroupItems =
         await this.groupItemsRepository.findByGroupId(groupToEditId);
 
@@ -140,12 +151,15 @@ export class EditGroupUseCase {
         poleScrews,
         cableConnectors,
       );
+
       actualGroupItems.forEach((item) => {
         actualGroupItemsIdsSet.add(item.id.toString());
       });
+
       const missingItems = itemsToEdit.filter(
         (item) => !actualGroupItemsIdsSet.has(item.id.toString()),
       );
+
       if (missingItems.length > 0) {
         return left(
           new NotAllowedError(
@@ -155,6 +169,7 @@ export class EditGroupUseCase {
           ),
         );
       }
+
       hasToEdit.items = true;
       newItems = newGroupItems;
       updatedItems = itemsToEdit;
@@ -213,11 +228,9 @@ export class EditGroupUseCase {
   }
 
   private classifyItems(items: GroupItemsToEdit[]) {
-    const materials: (GroupMaterialRequest & { groupItemId?: string })[] = [];
-    const poleScrews: (GroupPoleScrewRequest & { groupItemId?: string })[] = [];
-    const cableConnectors: (GroupCableConnectorRequest & {
-      groupItemId?: string;
-    })[] = [];
+    const materials: EditGroupMaterialRequest[] = [];
+    const poleScrews: EditGroupPoleScrewRequest[] = [];
+    const cableConnectors: EditGroupCableConnectorRequest[] = [];
 
     items.forEach((item) => {
       switch (item.type) {
@@ -237,8 +250,8 @@ export class EditGroupUseCase {
   }
 
   private async validateMaterials(
-    materials: GroupMaterialRequest[],
-  ): Promise<Either<NotAllowedError, undefined>> {
+    materials: EditGroupMaterialRequest[],
+  ): Promise<Either<ResourceNotFoundError, undefined>> {
     if (materials.length === 0) return right(undefined);
 
     const materialsIds = materials.map((material) => material.materialId);
@@ -253,7 +266,7 @@ export class EditGroupUseCase {
         (materialId) => !existingMaterialsIdsSet.has(materialId.toString()),
       );
       return left(
-        new NotAllowedError(
+        new ResourceNotFoundError(
           `Materials with missing IDs: ${missingMaterialsIds.join(", ")}`,
         ),
       );
@@ -261,18 +274,45 @@ export class EditGroupUseCase {
 
     return right(undefined);
   }
-  private validateContextItems(
-    items: (GroupPoleScrewRequest | GroupCableConnectorRequest)[],
-  ): Either<NotAllowedError, undefined> {
-    if (items.length === 0) return right(undefined);
 
-    for (const item of items) {
-      const itemKeyCheck =
-        item.type === "poleScrew" ? "lengthAdd" : "localCableSectionInMM";
-      if (item[itemKeyCheck] <= 0) {
+  private async validateLocalCables(
+    cableConnectors: EditGroupCableConnectorRequest[],
+  ): Promise<Either<ResourceNotFoundError, undefined>> {
+    const localCablesIds = cableConnectors
+      .map((connector) => connector.localCableId)
+      .filter((id): id is string => id !== undefined);
+
+    if (localCablesIds.length === 0) return right(undefined);
+
+    const uniqueLocalCablesIds = Array.from(new Set(localCablesIds));
+    const existingCables =
+      await this.cablesRepository.findByIds(uniqueLocalCablesIds);
+
+    if (existingCables.length !== uniqueLocalCablesIds.length) {
+      const existingCablesIdsSet = new Set(
+        existingCables.map((cable) => cable.id.toString()),
+      );
+      const missingCablesIds = uniqueLocalCablesIds.filter(
+        (cableId) => !existingCablesIdsSet.has(cableId),
+      );
+      return left(
+        new ResourceNotFoundError(
+          `Local Cables with missing IDs: ${missingCablesIds.join(", ")}`,
+        ),
+      );
+    }
+
+    return right(undefined);
+  }
+
+  private validateContextItems(
+    poleScrews: EditGroupPoleScrewRequest[],
+  ): Either<NotAllowedError, undefined> {
+    for (const item of poleScrews) {
+      if (item.lengthAdd <= 0) {
         return left(
           new NotAllowedError(
-            `Item of type "${item.type}" must have a positive value for "${itemKeyCheck}".`,
+            `Item of type "poleScrew" must have a positive value for "lengthAdd".`,
           ),
         );
       }
@@ -292,7 +332,6 @@ export class EditGroupUseCase {
     const newGroupItems: GroupItem[] = [];
     const itemsToEdit: GroupItem[] = [];
 
-    // Criar GroupItems para materials
     materials.forEach((material) => {
       const groupItem = GroupItem.createMaterial(
         {
@@ -303,7 +342,9 @@ export class EditGroupUseCase {
           description: material.description,
           type: "material",
         },
-        new UniqueEntityID(material.groupItemId),
+        material.groupItemId
+          ? new UniqueEntityID(material.groupItemId)
+          : undefined,
       );
       if (material.groupItemId) {
         itemsToEdit.push(groupItem);
@@ -312,7 +353,6 @@ export class EditGroupUseCase {
       }
     });
 
-    // Criar GroupItems para pole screws
     poleScrews.forEach((poleScrew) => {
       const groupItem = GroupItem.createPoleScrew(
         {
@@ -323,7 +363,9 @@ export class EditGroupUseCase {
           description: poleScrew.description,
           type: "poleScrew",
         },
-        new UniqueEntityID(poleScrew.groupItemId),
+        poleScrew.groupItemId
+          ? new UniqueEntityID(poleScrew.groupItemId)
+          : undefined,
       );
       if (poleScrew.groupItemId) {
         itemsToEdit.push(groupItem);
@@ -332,19 +374,22 @@ export class EditGroupUseCase {
       }
     });
 
-    // Criar GroupItems para cable connectors
     cableConnectors.forEach((cableConnector) => {
       const groupItem = GroupItem.createCableConnector(
         {
           groupId,
-          localCableSectionInMM: cableConnector.localCableSectionInMM,
+          localCableId: cableConnector.localCableId
+            ? new UniqueEntityID(cableConnector.localCableId)
+            : undefined,
+          oneSideConnector: cableConnector.oneSideConnector,
           quantity: cableConnector.quantity,
           addByPhase: cableConnector.addByPhase,
           description: cableConnector.description,
           type: "cableConnector",
-          oneSideConnector: cableConnector.oneSideConnector,
         },
-        new UniqueEntityID(cableConnector.groupItemId),
+        cableConnector.groupItemId
+          ? new UniqueEntityID(cableConnector.groupItemId)
+          : undefined,
       );
       if (cableConnector.groupItemId) {
         itemsToEdit.push(groupItem);

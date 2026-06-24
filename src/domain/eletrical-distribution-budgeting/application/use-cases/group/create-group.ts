@@ -3,9 +3,11 @@ import { Either, left, right } from "src/core/either";
 import { UniqueEntityID } from "src/core/entities/unique-entity-id";
 import { AlreadyRegisteredError } from "src/core/errors/generics/already-registered-error";
 import { NotAllowedError } from "src/core/errors/generics/not-allowed-error";
+import { ResourceNotFoundError } from "src/core/errors/generics/resource-not-found-error";
 import { Group } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/group";
 import { GroupItem } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/group-item";
 import { TensionLevel } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/tension-level";
+import { CablesRepository } from "../../repositories/cables-repository";
 import { GroupsRepository } from "../../repositories/groups-repository";
 import { MaterialsRepository } from "../../repositories/materials-repository";
 
@@ -16,7 +18,6 @@ export interface CreateGroupUseCaseRequest {
   items: GroupItemRequest[];
 }
 
-// Interfaces específicas para cada tipo de item vindo do frontend
 interface BaseGroupItemRequest {
   quantity: number;
   addByPhase?: number;
@@ -25,7 +26,7 @@ interface BaseGroupItemRequest {
 
 export interface GroupMaterialRequest extends BaseGroupItemRequest {
   type: "material";
-  materialId: string; // Vem como string do frontend
+  materialId: string;
 }
 
 export interface GroupPoleScrewRequest extends BaseGroupItemRequest {
@@ -35,18 +36,17 @@ export interface GroupPoleScrewRequest extends BaseGroupItemRequest {
 
 export interface GroupCableConnectorRequest extends BaseGroupItemRequest {
   type: "cableConnector";
-  localCableSectionInMM: number;
-  oneSideConnector: boolean;
+  localCableId?: string;
+  oneSideConnector?: boolean;
 }
 
-// Tipo união para todos os possíveis itens
 type GroupItemRequest =
   | GroupMaterialRequest
   | GroupPoleScrewRequest
   | GroupCableConnectorRequest;
 
 type CreateGroupUseCaseResponse = Either<
-  AlreadyRegisteredError | NotAllowedError,
+  AlreadyRegisteredError | NotAllowedError | ResourceNotFoundError,
   {
     group: Group;
   }
@@ -57,6 +57,7 @@ export class CreateGroupUseCase {
   constructor(
     private groupsRepository: GroupsRepository,
     private materialsRepository: MaterialsRepository,
+    private cablesRepository: CablesRepository,
   ) {}
 
   async execute({
@@ -66,15 +67,19 @@ export class CreateGroupUseCase {
     items,
   }: CreateGroupUseCaseRequest): Promise<CreateGroupUseCaseResponse> {
     const upperCasedTension = tension.toUpperCase();
+
     if (!TensionLevel.isValid(upperCasedTension)) {
       return left(
         new NotAllowedError(`Tension level "${tension}" is not allowed.`),
       );
     }
+
     if (items.length === 0) {
       return left(new NotAllowedError("Group must have at least one item."));
     }
+
     const existingGroup = await this.groupsRepository.findByName(name);
+
     if (existingGroup) {
       return left(
         new AlreadyRegisteredError(
@@ -86,27 +91,27 @@ export class CreateGroupUseCase {
     const { materials, poleScrews, cableConnectors } =
       this.classifyItems(items);
 
-    // Validar materials existem
     const materialValidation = await this.validateMaterials(materials);
     if (materialValidation.isLeft()) {
       return left(materialValidation.value);
     }
-    const contextItemsValidation = this.validateContextItems([
-      ...poleScrews,
-      ...cableConnectors,
-    ]);
+
+    const cablesValidation = await this.validateLocalCables(cableConnectors);
+    if (cablesValidation.isLeft()) {
+      return left(cablesValidation.value);
+    }
+
+    const contextItemsValidation = this.validateContextItems(poleScrews);
     if (contextItemsValidation.isLeft()) {
       return left(contextItemsValidation.value);
     }
 
-    // Criar o grupo
     const group = Group.create({
       name: name.toUpperCase(),
       tension: TensionLevel.create(upperCasedTension),
       description: description,
     });
 
-    // Criar os GroupItems
     const groupItems = this.createGroupItems(
       group.id,
       materials,
@@ -114,7 +119,6 @@ export class CreateGroupUseCase {
       cableConnectors,
     );
 
-    // Salvar no repositório (assumindo que seu repository tem método createWithItems)
     await this.groupsRepository.createGroupWithItems(group, groupItems);
 
     return right({
@@ -146,7 +150,7 @@ export class CreateGroupUseCase {
 
   private async validateMaterials(
     materials: GroupMaterialRequest[],
-  ): Promise<Either<NotAllowedError, undefined>> {
+  ): Promise<Either<ResourceNotFoundError, undefined>> {
     if (materials.length === 0) return right(undefined);
 
     const materialsIds = materials.map((material) => material.materialId);
@@ -158,10 +162,10 @@ export class CreateGroupUseCase {
         existingMaterials.map((material) => material.id.toString()),
       );
       const missingMaterialsIds = materialsIds.filter(
-        (materialId) => !existingMaterialsIdsSet.has(materialId.toString()),
+        (materialId) => !existingMaterialsIdsSet.has(materialId),
       );
       return left(
-        new NotAllowedError(
+        new ResourceNotFoundError(
           `Materials with missing IDs: ${missingMaterialsIds.join(", ")}`,
         ),
       );
@@ -170,18 +174,44 @@ export class CreateGroupUseCase {
     return right(undefined);
   }
 
-  private validateContextItems(
-    items: (GroupPoleScrewRequest | GroupCableConnectorRequest)[],
-  ): Either<NotAllowedError, undefined> {
-    if (items.length === 0) return right(undefined);
+  private async validateLocalCables(
+    cableConnectors: GroupCableConnectorRequest[],
+  ): Promise<Either<ResourceNotFoundError, undefined>> {
+    const localCablesIds = cableConnectors
+      .map((connector) => connector.localCableId)
+      .filter((id): id is string => id !== undefined);
 
-    for (const item of items) {
-      const itemKeyCheck =
-        item.type === "poleScrew" ? "lengthAdd" : "localCableSectionInMM";
-      if (item[itemKeyCheck] <= 0) {
+    if (localCablesIds.length === 0) return right(undefined);
+
+    const uniqueLocalCablesIds = Array.from(new Set(localCablesIds));
+    const existingCables =
+      await this.cablesRepository.findByIds(uniqueLocalCablesIds);
+
+    if (existingCables.length !== uniqueLocalCablesIds.length) {
+      const existingCablesIdsSet = new Set(
+        existingCables.map((cable) => cable.id.toString()),
+      );
+      const missingCablesIds = uniqueLocalCablesIds.filter(
+        (cableId) => !existingCablesIdsSet.has(cableId),
+      );
+      return left(
+        new ResourceNotFoundError(
+          `Local Cables with missing IDs: ${missingCablesIds.join(", ")}`,
+        ),
+      );
+    }
+
+    return right(undefined);
+  }
+
+  private validateContextItems(
+    poleScrews: GroupPoleScrewRequest[],
+  ): Either<NotAllowedError, undefined> {
+    for (const item of poleScrews) {
+      if (item.lengthAdd <= 0) {
         return left(
           new NotAllowedError(
-            `Item of type "${item.type}" must have a positive value for "${itemKeyCheck}".`,
+            `Item of type "poleScrew" must have a positive value for "lengthAdd".`,
           ),
         );
       }
@@ -197,7 +227,6 @@ export class CreateGroupUseCase {
   ): GroupItem[] {
     const groupItems: GroupItem[] = [];
 
-    // Criar GroupItems para materials
     materials.forEach((material) => {
       const groupItem = GroupItem.createMaterial({
         groupId,
@@ -210,7 +239,6 @@ export class CreateGroupUseCase {
       groupItems.push(groupItem);
     });
 
-    // Criar GroupItems para pole screws
     poleScrews.forEach((poleScrew) => {
       const groupItem = GroupItem.createPoleScrew({
         groupId,
@@ -223,16 +251,17 @@ export class CreateGroupUseCase {
       groupItems.push(groupItem);
     });
 
-    // Criar GroupItems para cable connectors
     cableConnectors.forEach((cableConnector) => {
       const groupItem = GroupItem.createCableConnector({
         groupId,
-        localCableSectionInMM: cableConnector.localCableSectionInMM,
+        localCableId: cableConnector.localCableId
+          ? new UniqueEntityID(cableConnector.localCableId)
+          : undefined,
+        oneSideConnector: cableConnector.oneSideConnector,
         quantity: cableConnector.quantity,
         addByPhase: cableConnector.addByPhase,
         description: cableConnector.description,
         type: "cableConnector",
-        oneSideConnector: cableConnector.oneSideConnector,
       });
       groupItems.push(groupItem);
     });
