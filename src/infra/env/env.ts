@@ -8,8 +8,14 @@ export const envSchema = z.object({
   JWT_PUBLIC_KEY: z.string(),
 
   REDIS_HOST: z.string().optional().default("localhost"),
+  REDIS_PASSWORD: z.string().optional().default(""),
   REDIS_PORT: z.coerce.number().optional().default(6379),
   REDIS_DB: z.coerce.number().optional().default(0),
+  REDIS_TLS: z
+    .string()
+    .optional()
+    .default("false")
+    .transform((val) => val?.toLowerCase() === "true"),
 
   CLOUDFLARE_ACCOUNT_ID: z.string(),
   AWS_BUCKET_NAME: z.string(),

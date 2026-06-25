@@ -26,7 +26,8 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
   }
   async findById(id: string): Promise<Company | null> {
     const cacheHit = await this.cache.get(`company:id:${id}`);
-    if (cacheHit) return JSON.parse(cacheHit) as Company;
+    console.log("cacheHit", cacheHit);
+    if (cacheHit) return PrismaCompanyMapper.toDomain(JSON.parse(cacheHit));
 
     const foundedCompany = await this.prisma.company.findUnique({
       where: { id },
@@ -34,7 +35,7 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
     if (!foundedCompany) return null;
 
     const domainCompany = PrismaCompanyMapper.toDomain(foundedCompany);
-    this.cache.set(`company:id:${id}`, JSON.stringify(domainCompany));
+    this.cache.set(`company:id:${id}`, JSON.stringify(foundedCompany));
 
     return domainCompany;
   }
