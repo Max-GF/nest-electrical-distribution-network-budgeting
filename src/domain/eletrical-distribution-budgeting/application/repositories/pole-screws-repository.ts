@@ -15,6 +15,7 @@ export abstract class PoleScrewsRepository {
   abstract createMany(poleScrews: PoleScrew[]): Promise<void>;
   abstract save(poleScrew: PoleScrew): Promise<void>;
   abstract findById(id: string): Promise<PoleScrew | null>;
+  abstract findByIds(ids: string[]): Promise<PoleScrew[]>;
   abstract findByCode(code: number): Promise<PoleScrew | null>;
   abstract findAllCodes(): Promise<number[]>;
   abstract getAllOrderedByLength(): Promise<PoleScrew[]>;

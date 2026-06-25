@@ -16,6 +16,15 @@ import { CalculateBudgetPresenter } from "../../../presenters/eletrical-distribu
 import { ValidateManyPointsDto } from "../../../swagger/eletrical-distribution-budgeting/dto/point/validate-many-points.dto";
 import { CalculateBudgetResponse } from "../../../swagger/eletrical-distribution-budgeting/responses/budget/calculate-budget.response";
 
+// Importando os repositórios e o Value Object
+import { CableConnectorsRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/cable-connectors-repository";
+import { CablesRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/cables-repository";
+import { GroupsRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/groups-repository";
+import { MaterialsRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/materials-repository";
+import { PoleScrewsRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/pole-screws-repository";
+import { UtilityPolesRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/utility-poles-repository";
+import { ProjectMaterialWithDetails } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/project-material-with-details";
+
 const cableRequestSchema = z.object({
   isNew: z.boolean(),
   cableId: z.string().uuid(),
@@ -72,6 +81,12 @@ export class CalculateBudgetController {
   constructor(
     private validateManyPointsUseCase: ValidateManyPointsUseCase,
     private calculateBudgetUseCase: CalculateBudgetUseCase,
+    private cablesRepository: CablesRepository,
+    private utilityPolesRepository: UtilityPolesRepository,
+    private cableConnectorsRepository: CableConnectorsRepository,
+    private poleScrewsRepository: PoleScrewsRepository,
+    private materialsRepository: MaterialsRepository,
+    private groupsRepository: GroupsRepository,
   ) {}
 
   @Post()
@@ -84,6 +99,7 @@ export class CalculateBudgetController {
   ) {
     const { points } = body;
 
+    // 1. Validação dos pontos
     const validationResult = await this.validateManyPointsUseCase.execute({
       points,
       projectId,
@@ -105,6 +121,7 @@ export class CalculateBudgetController {
 
     const { parsedPoints, project } = validationResult.value;
 
+    // 2. Cálculo do Orçamento (Entidades Puras)
     const budgetResult = await this.calculateBudgetUseCase.execute({
       project,
       parsedPoints,
@@ -124,8 +141,121 @@ export class CalculateBudgetController {
 
     const { projectMaterials } = budgetResult.value;
 
+    // --- MONTAGEM DO MODELO DE LEITURA (READ MODEL) ---
+
+    // 3. Extrair os IDs para buscar no banco
+    const idsByType = {
+      cable: new Set<string>(),
+      utilityPole: new Set<string>(),
+      cableConnector: new Set<string>(),
+      poleScrew: new Set<string>(),
+      material: new Set<string>(),
+    };
+    const groupIds = new Set<string>();
+
+    for (const pm of projectMaterials) {
+      idsByType[pm.itemType].add(pm.itemId.toString());
+      if (pm.groupSpecs) {
+        groupIds.add(pm.groupSpecs.groupId.toString());
+      }
+    }
+
+    // 4. Buscar os metadados do catálogo em paralelo
+    const [cables, poles, connectors, screws, materials, groups] =
+      await Promise.all([
+        this.cablesRepository.findByIds(Array.from(idsByType.cable)),
+        this.utilityPolesRepository.findByIds(
+          Array.from(idsByType.utilityPole),
+        ),
+        this.cableConnectorsRepository.findByIds(
+          Array.from(idsByType.cableConnector),
+        ),
+        this.poleScrewsRepository.findByIds(Array.from(idsByType.poleScrew)),
+        this.materialsRepository.findByIds(Array.from(idsByType.material)),
+        this.groupsRepository.findByIds(Array.from(groupIds)),
+      ]);
+
+    // 5. Mapear os dados num dicionário (O(1) Hash Map)
+    const itemsCatalogMap = new Map<
+      string,
+      { code: number; description: string; unit: string }
+    >();
+
+    cables.forEach((c) =>
+      itemsCatalogMap.set(c.id.toString(), {
+        code: c.code,
+        description: c.description,
+        unit: c.unit,
+      }),
+    );
+    poles.forEach((p) =>
+      itemsCatalogMap.set(p.id.toString(), {
+        code: p.code,
+        description: p.description,
+        unit: p.unit,
+      }),
+    );
+    connectors.forEach((c) =>
+      itemsCatalogMap.set(c.id.toString(), {
+        code: c.code,
+        description: c.description,
+        unit: c.unit,
+      }),
+    );
+    screws.forEach((s) =>
+      itemsCatalogMap.set(s.id.toString(), {
+        code: s.code,
+        description: s.description,
+        unit: s.unit,
+      }),
+    );
+    materials.forEach((m) =>
+      itemsCatalogMap.set(m.id.toString(), {
+        code: m.code,
+        description: m.description,
+        unit: m.unit,
+      }),
+    );
+
+    const groupsMap = new Map(groups.map((g) => [g.id.toString(), g]));
+    const pointsMap = new Map(
+      parsedPoints.map((p) => [p.point.id.toString(), p.point]),
+    );
+
+    // 6. Criar os Value Objects enriquecidos
+    const projectMaterialsWithDetails = projectMaterials.map((pm) => {
+      const catalogInfo = itemsCatalogMap.get(pm.itemId.toString());
+      const point = pm.pointId
+        ? pointsMap.get(pm.pointId.toString())
+        : undefined;
+      const group = pm.groupSpecs
+        ? groupsMap.get(pm.groupSpecs.groupId.toString())
+        : undefined;
+
+      return ProjectMaterialWithDetails.create({
+        id: pm.id,
+        project,
+        point,
+        itemType: pm.itemType,
+        itemCode: catalogInfo?.code ?? 0,
+        itemDescription: catalogInfo?.description ?? "Item desconhecido",
+        itemUnit: catalogInfo?.unit ?? "-",
+        quantity: pm.quantity,
+        groupSpecs:
+          pm.groupSpecs && group
+            ? {
+                group,
+                utilityPoleLevel: pm.groupSpecs.utilityPoleLevel,
+                tensionLevel: pm.groupSpecs.tensionLevel,
+              }
+            : undefined,
+      });
+    });
+
     return {
-      projectMaterials: projectMaterials.map(CalculateBudgetPresenter.toHTTP),
+      projectMaterials: projectMaterialsWithDetails.map(
+        CalculateBudgetPresenter.toHTTPWithDetails,
+      ),
     };
   }
 }
