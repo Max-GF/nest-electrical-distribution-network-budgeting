@@ -24,9 +24,28 @@ import { PointsRepository } from "../../repositories/points-repository";
 import { ProjectsRepository } from "../../repositories/projects-repository";
 import { UtilityPolesRepository } from "../../repositories/utility-poles-repository";
 
+// ─── Span interfaces ────────────────────────────────────────────────────────
+
+interface SpanRequest {
+  name: string;
+  cableId: string;
+  extension: number;
+  tensionLevel: "LOW" | "MEDIUM";
+}
+
+export interface ParsedSpan {
+  name: string;
+  cable: Cable;
+  extension: number;
+  tensionLevel: "LOW" | "MEDIUM";
+}
+
+// ─── Point interfaces ────────────────────────────────────────────────────────
+
 export interface ValidateManyPointsUseCaseRequest {
   projectId: string;
   points: PointToValidateRequest[];
+  spans: SpanRequest[];
 }
 
 interface PointToValidateRequest {
@@ -83,22 +102,28 @@ export interface ParsedPointCables {
     };
   };
 }
+
 interface PointUtilityPoleRequest {
   isNew: boolean;
   utilityPoleId: string;
 }
+
 export interface ParsedPointUtilityPole {
   isNew: boolean;
   utilityPole: UtilityPole;
 }
+
 interface PointGroupRequest {
   tensionLevel: "LOW" | "MEDIUM";
   level: number;
   groupId: string;
+  onStrongSideDirection: boolean;
 }
+
 interface ParsedPointGroup extends GroupWithSeparatedItems {
   tensionLevel: "LOW" | "MEDIUM";
   level: number;
+  onStrongSideDirection: boolean;
 }
 
 interface GroupWithSeparatedItems {
@@ -121,6 +146,7 @@ type ValidateManyPointsUseCaseResponse = Either<
   {
     project: Project;
     parsedPoints: ParsedPointToCreate[];
+    parsedSpans: ParsedSpan[];
   }
 >;
 
@@ -139,17 +165,21 @@ export class ValidateManyPointsUseCase {
   async execute({
     points,
     projectId,
+    spans,
   }: ValidateManyPointsUseCaseRequest): Promise<ValidateManyPointsUseCaseResponse> {
-    const pointsInfosToValidadeChecks =
-      this.getAllPointsInfosToValidate(points);
+    const pointsInfosToValidadeChecks = this.getAllPointsInfosToValidate(
+      points,
+      spans,
+    );
 
     if (pointsInfosToValidadeChecks.isLeft()) {
-      return left(pointsInfosToValidadeChecks.value); // Basicantente, erro de nome duplicado na requisição
+      return left(pointsInfosToValidadeChecks.value);
     }
+
     const {
       pointsNames,
       pointsUtilityPoleIds,
-      pointsCablesIds,
+      allCablesIds,
       pointsGroupsIds,
       pointsUntiedMaterialsIds,
     } = pointsInfosToValidadeChecks.value;
@@ -165,29 +195,18 @@ export class ValidateManyPointsUseCase {
       this.performAllProjectChecks(projectId),
       this.performAllNamesDuplicateChecks(pointsNames, projectId),
       this.checkAllUtilityPolesIds(pointsUtilityPoleIds),
-      this.checkAllCablesIds(pointsCablesIds),
+      this.checkAllCablesIds(allCablesIds), // unified fetch for points + spans
       this.checkAllGroupsIds(pointsGroupsIds),
       this.checkAllUntiedMaterialsIds(pointsUntiedMaterialsIds),
     ]);
 
-    if (projectChecks.isLeft()) {
-      return left(projectChecks.value);
-    }
-    if (namesChecks.isLeft()) {
-      return left(namesChecks.value);
-    }
-    if (utilityPolesIdChecks.isLeft()) {
-      return left(utilityPolesIdChecks.value);
-    }
-    if (cablesIdsChecks.isLeft()) {
-      return left(cablesIdsChecks.value);
-    }
-    if (groupsIdsChecks.isLeft()) {
-      return left(groupsIdsChecks.value);
-    }
-    if (untiedMaterialsIdsChecks.isLeft()) {
+    if (projectChecks.isLeft()) return left(projectChecks.value);
+    if (namesChecks.isLeft()) return left(namesChecks.value);
+    if (utilityPolesIdChecks.isLeft()) return left(utilityPolesIdChecks.value);
+    if (cablesIdsChecks.isLeft()) return left(cablesIdsChecks.value);
+    if (groupsIdsChecks.isLeft()) return left(groupsIdsChecks.value);
+    if (untiedMaterialsIdsChecks.isLeft())
       return left(untiedMaterialsIdsChecks.value);
-    }
 
     const pointsGroupCountCheck = await this.checkPointsGroupsCount(
       points,
@@ -206,13 +225,24 @@ export class ValidateManyPointsUseCase {
       groupsMapById: groupsIdsChecks.value.groupsMapById,
       materialsMapById: untiedMaterialsIdsChecks.value.materialsMapById,
     });
+
     if (parsedPointsToCreate.isLeft()) {
       return left(parsedPointsToCreate.value);
+    }
+
+    const parsedSpans = this.parseSpans(
+      spans,
+      cablesIdsChecks.value.cablesMapById,
+    );
+
+    if (parsedSpans.isLeft()) {
+      return left(parsedSpans.value);
     }
 
     return right({
       project: projectChecks.value.project,
       parsedPoints: parsedPointsToCreate.value,
+      parsedSpans: parsedSpans.value,
     });
   }
 
@@ -226,24 +256,26 @@ export class ValidateManyPointsUseCase {
     return right({ project });
   }
 
-  getAllPointsInfosToValidate(points: PointToValidateRequest[]): Either<
-    AlreadyRegisteredError,
+  getAllPointsInfosToValidate(
+    points: PointToValidateRequest[],
+    spans: SpanRequest[],
+  ): Either<
+    AlreadyRegisteredError | NotAllowedError,
     {
       pointsNames: string[];
       pointsUtilityPoleIds: string[];
-      pointsCablesIds: string[];
+      allCablesIds: string[];
       pointsGroupsIds: string[];
       pointsUntiedMaterialsIds: string[];
     }
   > {
     const pointsNamesSet = new Set<string>();
     const pointsUtilityPoleIdsSet = new Set<string>();
-    const pointsCablesIdsSet = new Set<string>();
+    const allCablesIdsSet = new Set<string>();
     const pointsGroupsIdsSet = new Set<string>();
     const pointsUntiedMaterialsIdsSet = new Set<string>();
 
     for (const point of points) {
-      // Check for duplicate point names
       if (pointsNamesSet.has(point.name)) {
         return left(
           new NotAllowedError(`Duplicate point name found: ${point.name}`),
@@ -253,25 +285,26 @@ export class ValidateManyPointsUseCase {
       pointsUtilityPoleIdsSet.add(point.pointUtilityPole.utilityPoleId);
 
       if (point.pointCables.lowTensionCables) {
-        pointsCablesIdsSet.add(
+        allCablesIdsSet.add(
           point.pointCables.lowTensionCables.entranceCable.cableId,
         );
         if (point.pointCables.lowTensionCables.exitCable) {
-          pointsCablesIdsSet.add(
+          allCablesIdsSet.add(
             point.pointCables.lowTensionCables.exitCable.cableId,
           );
         }
       }
       if (point.pointCables.mediumTensionCables) {
-        pointsCablesIdsSet.add(
+        allCablesIdsSet.add(
           point.pointCables.mediumTensionCables.entranceCable.cableId,
         );
         if (point.pointCables.mediumTensionCables.exitCable) {
-          pointsCablesIdsSet.add(
+          allCablesIdsSet.add(
             point.pointCables.mediumTensionCables.exitCable.cableId,
           );
         }
       }
+
       if (point.pointGroups) {
         const levelsSet = new Set<string>();
         for (const group of point.pointGroups) {
@@ -286,20 +319,35 @@ export class ValidateManyPointsUseCase {
           pointsGroupsIdsSet.add(group.groupId);
         }
       }
+
       if (point.untiedMaterials) {
         point.untiedMaterials.forEach((material) => {
           pointsUntiedMaterialsIdsSet.add(material.materialId);
         });
       }
     }
+
+    // Collect span cable IDs and check for duplicate span names
+    const spanNamesSet = new Set<string>();
+    for (const span of spans) {
+      if (spanNamesSet.has(span.name)) {
+        return left(
+          new NotAllowedError(`Duplicate span name found: ${span.name}`),
+        );
+      }
+      spanNamesSet.add(span.name);
+      allCablesIdsSet.add(span.cableId);
+    }
+
     return right({
       pointsNames: Array.from(pointsNamesSet),
       pointsUtilityPoleIds: Array.from(pointsUtilityPoleIdsSet),
-      pointsCablesIds: Array.from(pointsCablesIdsSet),
+      allCablesIds: Array.from(allCablesIdsSet),
       pointsGroupsIds: Array.from(pointsGroupsIdsSet),
       pointsUntiedMaterialsIds: Array.from(pointsUntiedMaterialsIdsSet),
     });
   }
+
   async performAllNamesDuplicateChecks(
     pointsNames: string[],
     projectId: string,
@@ -321,6 +369,7 @@ export class ValidateManyPointsUseCase {
     }
     return right(null);
   }
+
   async checkAllUtilityPolesIds(
     pointsUtilityPoleIds: string[],
   ): Promise<
@@ -350,20 +399,21 @@ export class ValidateManyPointsUseCase {
     }
     return right({ utilityPolesMapById: mapOfUtilityPolesById });
   }
+
   async checkAllCablesIds(
-    pointsCablesIds: string[],
+    cablesIds: string[],
   ): Promise<
     Either<ResourceNotFoundError, { cablesMapById: Map<string, Cable> }>
   > {
-    if (pointsCablesIds.length === 0) {
+    if (cablesIds.length === 0) {
       return right({ cablesMapById: new Map() });
     }
-    const cables = await this.cablesRepository.findByIds(pointsCablesIds);
+    const cables = await this.cablesRepository.findByIds(cablesIds);
     const mapOfCablesById = new Map<string, Cable>(
       cables.map((cable) => [cable.id.toString(), cable]),
     );
-    if (cables.length !== pointsCablesIds.length) {
-      const missingCableIds = pointsCablesIds.filter(
+    if (cables.length !== cablesIds.length) {
+      const missingCableIds = cablesIds.filter(
         (id) => !mapOfCablesById.has(id),
       );
       return left(
@@ -374,6 +424,7 @@ export class ValidateManyPointsUseCase {
     }
     return right({ cablesMapById: mapOfCablesById });
   }
+
   async checkAllGroupsIds(
     pointsGroupsIds: string[],
   ): Promise<
@@ -444,6 +495,7 @@ export class ValidateManyPointsUseCase {
 
     return right({ groupsMapById: mapOfGroupsById });
   }
+
   async checkAllUntiedMaterialsIds(
     pointsUntiedMaterialsIds: string[],
   ): Promise<
@@ -514,6 +566,7 @@ export class ValidateManyPointsUseCase {
     }
     return right(null);
   }
+
   parsePointsToCreate({
     projectId,
     points,
@@ -531,7 +584,6 @@ export class ValidateManyPointsUseCase {
   }): Either<NotAllowedError, ParsedPointToCreate[]> {
     const parsedPointsToCreate: ParsedPointToCreate[] = [];
     for (const point of points) {
-      // Parse Point Utility Pole
       const utilityPoleParseCheck = this.parsePointUtilityPole(
         point.pointUtilityPole,
         utilityPolesMapById,
@@ -613,6 +665,7 @@ export class ValidateManyPointsUseCase {
       isNew: pointUtilityPoleReq.isNew,
     });
   }
+
   parsePointCables(
     pointCablesReq: PointCablesRequest,
     cablesMapById: Map<string, Cable>,
@@ -691,7 +744,7 @@ export class ValidateManyPointsUseCase {
         if (!exitCable) {
           return left(
             new NotAllowedError(
-              "Server Error: Low tension exit cable not found for point, this should not happen",
+              "Server Error: Medium tension exit cable not found for point, this should not happen",
             ),
           );
         }
@@ -707,6 +760,7 @@ export class ValidateManyPointsUseCase {
       mediumTensionCables: parsedMediumCables,
     });
   }
+
   parsePointGroups(
     pointGroupsReq: PointGroupRequest[] | undefined,
     groupsMapById: Map<string, GroupWithSeparatedItems>,
@@ -735,11 +789,13 @@ export class ValidateManyPointsUseCase {
       parsedGroups.push({
         tensionLevel: pointGroupReq.tensionLevel,
         level: pointGroupReq.level,
+        onStrongSideDirection: pointGroupReq.onStrongSideDirection,
         ...groupWithItens,
       });
     }
     return right(parsedGroups);
   }
+
   parsePointUntiedMaterials(
     pointUntiedMaterialsReq:
       | { quantity: number; materialId: string }[]
@@ -766,5 +822,32 @@ export class ValidateManyPointsUseCase {
       });
     }
     return right(parsedUntiedMaterials);
+  }
+
+  parseSpans(
+    spans: SpanRequest[],
+    cablesMapById: Map<string, Cable>,
+  ): Either<NotAllowedError, ParsedSpan[]> {
+    if (spans.length === 0) {
+      return right([]);
+    }
+    const parsedSpans: ParsedSpan[] = [];
+    for (const span of spans) {
+      const cable = cablesMapById.get(span.cableId);
+      if (!cable) {
+        return left(
+          new NotAllowedError(
+            "Server Error: Cable not found for span, this should not happen",
+          ),
+        );
+      }
+      parsedSpans.push({
+        name: span.name,
+        cable,
+        extension: span.extension,
+        tensionLevel: span.tensionLevel,
+      });
+    }
+    return right(parsedSpans);
   }
 }

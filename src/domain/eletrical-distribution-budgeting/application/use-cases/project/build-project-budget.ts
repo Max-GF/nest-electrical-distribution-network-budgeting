@@ -31,18 +31,21 @@ export class BuildProjectBudgetUseCase {
   async execute({
     projectId,
     points,
+    spans,
   }: ValidateManyPointsUseCaseRequest): Promise<BuildProjectBudgetUseCaseResponse> {
     const validatePointsResult = await this.validateManyPointsUseCase.execute({
       projectId,
       points,
+      spans,
     });
     if (validatePointsResult.isLeft()) {
       return left(validatePointsResult.value);
     }
-    const { project, parsedPoints } = validatePointsResult.value;
+    const { project, parsedPoints, parsedSpans } = validatePointsResult.value;
     const calculateBudgetResult = await this.calculateBudgetUseCase.execute({
       project,
       parsedPoints,
+      parsedSpans,
     });
     if (calculateBudgetResult.isLeft()) {
       return left(calculateBudgetResult.value);

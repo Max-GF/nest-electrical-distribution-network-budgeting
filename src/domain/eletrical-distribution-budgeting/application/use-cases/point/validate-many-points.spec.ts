@@ -57,7 +57,7 @@ describe("Validate Many Points Use Case", () => {
     );
   });
 
-  it("should be able to validate and parse multiple points successfully", async () => {
+  it("should be able to validate and parse multiple points and spans successfully", async () => {
     const project = makeProject({}, new UniqueEntityID("project-1"));
     await inMemoryProjectsRepository.createMany([project]);
 
@@ -69,7 +69,12 @@ describe("Validate Many Points Use Case", () => {
 
     const cableLow = makeCable({}, new UniqueEntityID("cable-low-1"));
     const cableMedium = makeCable({}, new UniqueEntityID("cable-med-1"));
-    await inMemoryCablesRepository.createMany([cableLow, cableMedium]);
+    const cableSpan = makeCable({}, new UniqueEntityID("cable-span-1"));
+    await inMemoryCablesRepository.createMany([
+      cableLow,
+      cableMedium,
+      cableSpan,
+    ]);
 
     const groupLow = makeGroup(
       { tension: { value: "LOW" } },
@@ -103,10 +108,28 @@ describe("Validate Many Points Use Case", () => {
             },
           },
           pointGroups: [
-            { groupId: "group-low-1", tensionLevel: "LOW", level: 1 },
-            { groupId: "group-med-1", tensionLevel: "MEDIUM", level: 1 },
+            {
+              groupId: "group-low-1",
+              tensionLevel: "LOW",
+              level: 1,
+              onStrongSideDirection: true,
+            },
+            {
+              groupId: "group-med-1",
+              tensionLevel: "MEDIUM",
+              level: 1,
+              onStrongSideDirection: false,
+            },
           ],
           untiedMaterials: [{ materialId: "mat-1", quantity: 5 }],
+        },
+      ],
+      spans: [
+        {
+          name: "Span 1",
+          cableId: "cable-span-1",
+          extension: 50,
+          tensionLevel: "MEDIUM",
         },
       ],
     });
@@ -115,7 +138,9 @@ describe("Validate Many Points Use Case", () => {
     if (result.isRight()) {
       expect(result.value.project.id.toString()).toEqual("project-1");
       expect(result.value.parsedPoints).toHaveLength(1);
+      expect(result.value.parsedSpans).toHaveLength(1);
 
+      // Verifying Point
       const parsedPoint = result.value.parsedPoints[0];
       expect(parsedPoint.point.name).toEqual("Point A");
       expect(parsedPoint.pointUtilityPole.utilityPole.id.toString()).toEqual(
@@ -124,8 +149,20 @@ describe("Validate Many Points Use Case", () => {
       expect(
         parsedPoint.pointCables.lowTensionCables?.entranceCable.cable.id.toString(),
       ).toEqual("cable-low-1");
+
       expect(parsedPoint.pointGroupsWithItems).toHaveLength(2);
+      expect(parsedPoint.pointGroupsWithItems[0].onStrongSideDirection).toBe(
+        true,
+      );
+
       expect(parsedPoint.pointUntiedMaterials).toHaveLength(1);
+
+      // Verifying Span
+      const parsedSpan = result.value.parsedSpans[0];
+      expect(parsedSpan.name).toEqual("Span 1");
+      expect(parsedSpan.cable.id.toString()).toEqual("cable-span-1");
+      expect(parsedSpan.extension).toEqual(50);
+      expect(parsedSpan.tensionLevel).toEqual("MEDIUM");
     }
   });
 
@@ -133,6 +170,7 @@ describe("Validate Many Points Use Case", () => {
     const result = await sut.execute({
       projectId: "non-existent-project",
       points: [],
+      spans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();
@@ -157,6 +195,7 @@ describe("Validate Many Points Use Case", () => {
           pointCables: {},
         },
       ],
+      spans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();
@@ -186,6 +225,7 @@ describe("Validate Many Points Use Case", () => {
           pointGroups: [],
         },
       ],
+      spans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();
@@ -213,11 +253,17 @@ describe("Validate Many Points Use Case", () => {
             },
           },
           pointGroups: [
-            { groupId: "missing-group", tensionLevel: "LOW", level: 1 },
+            {
+              groupId: "missing-group",
+              tensionLevel: "LOW",
+              level: 1,
+              onStrongSideDirection: true,
+            },
           ],
           untiedMaterials: [{ materialId: "missing-material", quantity: 1 }],
         },
       ],
+      spans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();
@@ -259,11 +305,22 @@ describe("Validate Many Points Use Case", () => {
           pointUtilityPole: { utilityPoleId: "pole-weak", isNew: true },
           pointCables: {},
           pointGroups: [
-            { groupId: "group-1", tensionLevel: "LOW", level: 1 },
-            { groupId: "group-1", tensionLevel: "LOW", level: 2 },
+            {
+              groupId: "group-1",
+              tensionLevel: "LOW",
+              level: 1,
+              onStrongSideDirection: true,
+            },
+            {
+              groupId: "group-1",
+              tensionLevel: "LOW",
+              level: 2,
+              onStrongSideDirection: false,
+            },
           ],
         },
       ],
+      spans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();
@@ -296,10 +353,16 @@ describe("Validate Many Points Use Case", () => {
           pointUtilityPole: { utilityPoleId: "pole-1", isNew: true },
           pointCables: {},
           pointGroups: [
-            { groupId: "group-medium", tensionLevel: "LOW", level: 1 },
+            {
+              groupId: "group-medium",
+              tensionLevel: "LOW",
+              level: 1,
+              onStrongSideDirection: true,
+            },
           ],
         },
       ],
+      spans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();
@@ -318,11 +381,22 @@ describe("Validate Many Points Use Case", () => {
           pointUtilityPole: { utilityPoleId: "any", isNew: true },
           pointCables: {},
           pointGroups: [
-            { groupId: "any-1", tensionLevel: "LOW", level: 1 },
-            { groupId: "any-2", tensionLevel: "LOW", level: 1 },
+            {
+              groupId: "any-1",
+              tensionLevel: "LOW",
+              level: 1,
+              onStrongSideDirection: true,
+            },
+            {
+              groupId: "any-2",
+              tensionLevel: "LOW",
+              level: 1,
+              onStrongSideDirection: false,
+            },
           ],
         },
       ],
+      spans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();
@@ -330,6 +404,61 @@ describe("Validate Many Points Use Case", () => {
       expect(result.value).toBeInstanceOf(AlreadyRegisteredError);
       expect(result.value.message).toContain(
         "Duplicate group level 1 found for tension level LOW",
+      );
+    }
+  });
+
+  it("should return NotAllowedError if there are duplicate span names in the request", async () => {
+    const result = await sut.execute({
+      projectId: "project-1",
+      points: [],
+      spans: [
+        {
+          name: "Duplicate Span",
+          cableId: "cable-1",
+          extension: 10,
+          tensionLevel: "LOW",
+        },
+        {
+          name: "Duplicate Span",
+          cableId: "cable-2",
+          extension: 20,
+          tensionLevel: "MEDIUM",
+        },
+      ],
+    });
+
+    expect(result.isLeft()).toBeTruthy();
+    if (result.isLeft()) {
+      expect(result.value).toBeInstanceOf(NotAllowedError);
+      expect(result.value.message).toContain(
+        "Duplicate span name found: Duplicate Span",
+      );
+    }
+  });
+
+  it("should return ResourceNotFoundError if a cable mapped in a span does not exist", async () => {
+    const project = makeProject({}, new UniqueEntityID("project-1"));
+    await inMemoryProjectsRepository.createMany([project]);
+
+    const result = await sut.execute({
+      projectId: "project-1",
+      points: [],
+      spans: [
+        {
+          name: "Span 1",
+          cableId: "non-existent-cable",
+          extension: 10,
+          tensionLevel: "LOW",
+        },
+      ],
+    });
+
+    expect(result.isLeft()).toBeTruthy();
+    if (result.isLeft()) {
+      expect(result.value).toBeInstanceOf(ResourceNotFoundError);
+      expect(result.value.message).toContain(
+        "Cables not found for IDs: non-existent-cable",
       );
     }
   });

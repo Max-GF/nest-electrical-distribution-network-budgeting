@@ -15,6 +15,9 @@ export class InMemoryCableConnectorsRepository
   implements CableConnectorsRepository
 {
   constructor(private cablesRepository: InMemoryCablesRepository) {}
+  async findByIds(ids: string[]): Promise<CableConnector[]> {
+    return this.items.filter((item) => ids.includes(item.id.toString()));
+  }
   async getAll(): Promise<CableConnector[]> {
     return this.items;
   }

@@ -13,7 +13,7 @@ import { makeUtilityPole } from "test/factories/eletrical-distribution-budgeting
 import { InMemoryCableConnectorsRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-cable-connectors-repository";
 import { InMemoryCablesRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-cables-repository";
 import { InMemoryPoleScrewsRepository } from "test/repositories/eletrical-distribution-budgeting/in-memory-pole-screws-repository";
-import { ParsedPointToCreate } from "../point/validate-many-points";
+import { ParsedPointToCreate, ParsedSpan } from "../point/validate-many-points";
 import { CalculateBudgetUseCase } from "./calculate-budget";
 
 let inMemoryPoleScrewsRepository: InMemoryPoleScrewsRepository;
@@ -34,7 +34,7 @@ describe("Calculate Budget Use Case", () => {
     );
   });
 
-  it("should calculate budget materials for a complete point successfully", async () => {
+  it("should calculate budget materials for a complete point and spans successfully", async () => {
     const screwSmall = makePoleScrew(
       { lengthInMM: 150 },
       new UniqueEntityID("screw-150"),
@@ -43,6 +43,10 @@ describe("Calculate Budget Use Case", () => {
       { lengthInMM: 250 },
       new UniqueEntityID("screw-250"),
     );
+    const screwMediumPlus = makePoleScrew(
+      { lengthInMM: 300 },
+      new UniqueEntityID("screw-300"),
+    );
     const screwLarge = makePoleScrew(
       { lengthInMM: 400 },
       new UniqueEntityID("screw-400"),
@@ -50,13 +54,14 @@ describe("Calculate Budget Use Case", () => {
     await inMemoryPoleScrewsRepository.createMany([
       screwLarge,
       screwSmall,
+      screwMediumPlus,
       screwMedium,
     ]);
 
     const cableEntrance = makeCable({}, new UniqueEntityID("cable-in"));
     const cableExit = makeCable({}, new UniqueEntityID("cable-out"));
+    const cableSpan = makeCable({}, new UniqueEntityID("cable-span"));
 
-    // O Connector agora precisa ser criado com os IDs dos cabos nas suas opções
     const connector = makeCableConnector(
       {
         entranceCablesOptionsIds: [cableEntrance.id],
@@ -68,9 +73,17 @@ describe("Calculate Budget Use Case", () => {
 
     const project = makeProject({}, new UniqueEntityID("proj-1"));
     const point = makePoint({}, new UniqueEntityID("point-1"));
-    const utilityPole = makeUtilityPole({}, new UniqueEntityID("pole-1"));
+    const utilityPole = makeUtilityPole(
+      {
+        lowVoltageLevelsCount: 1,
+        strongSideSectionMultiplier: 1.3,
+        lowVoltageStartSectionLengthInMM: 200,
+        lowVoltageSectionLengthAddBylevelInMM: 50,
+      },
+      new UniqueEntityID("pole-1"),
+    );
 
-    vi.spyOn(utilityPole, "calculateSectionLengthInMM").mockReturnValue(200);
+    // vi.spyOn(utilityPole, "calculateSectionLengthInMM").mockReturnValue(200);
 
     const group = makeGroup({}, new UniqueEntityID("group-1"));
     const material = makeMaterial({}, new UniqueEntityID("mat-1"));
@@ -90,6 +103,7 @@ describe("Calculate Budget Use Case", () => {
           group,
           level: 1,
           tensionLevel: "LOW",
+          onStrongSideDirection: true,
           untiedMaterials: [
             GroupItem.createMaterial({
               groupId: group.id,
@@ -101,7 +115,7 @@ describe("Calculate Budget Use Case", () => {
           poleScrews: [
             GroupItem.createPoleScrew({
               groupId: group.id,
-              lengthAdd: 10, // 200mm (poste) + 10mm (add) = 210mm necessário. Deve pegar o parafuso de 250mm
+              lengthAdd: 50, // 200mm*(1.3 do sentido topo) (poste) + 50mm (add das estruturas) = 310mm necessário. Deve pegar o parafuso de 400mm
               quantity: 1,
               type: "poleScrew",
             }),
@@ -119,9 +133,17 @@ describe("Calculate Budget Use Case", () => {
       ],
     };
 
+    const parsedSpan: ParsedSpan = {
+      name: "Span 1",
+      cable: cableSpan,
+      extension: 45,
+      tensionLevel: "LOW",
+    };
+
     const result = await sut.execute({
       project,
       parsedPoints: [parsedPoint],
+      parsedSpans: [parsedSpan],
     });
 
     expect(result.isRight()).toBeTruthy();
@@ -134,12 +156,12 @@ describe("Calculate Budget Use Case", () => {
           1 + // Pole Screw
           1 + // Cable Connector
           1 + // Utility Pole (isNew: true)
-          1, // Entrance Cable (isNew: true) - Exit cable isNew: false
+          1, // Span Cable
       );
 
       const screwMaterial = materials.find((m) => m.itemType === "poleScrew");
       expect(screwMaterial).toBeDefined();
-      expect(screwMaterial?.itemId.toString()).toEqual("screw-250");
+      expect(screwMaterial?.itemId.toString()).toEqual("screw-400");
 
       const connectorMaterial = materials.find(
         (m) => m.itemType === "cableConnector",
@@ -149,6 +171,12 @@ describe("Calculate Budget Use Case", () => {
 
       const poleMaterial = materials.find((m) => m.itemType === "utilityPole");
       expect(poleMaterial?.itemId.toString()).toEqual("pole-1");
+
+      const spanCableMaterial = materials.find((m) => m.itemType === "cable");
+      expect(spanCableMaterial).toBeDefined();
+      expect(spanCableMaterial?.itemId.toString()).toEqual("cable-span");
+      expect(spanCableMaterial?.quantity).toEqual(45);
+      expect(spanCableMaterial?.pointId).toBeUndefined();
     }
   });
 
@@ -159,7 +187,7 @@ describe("Calculate Budget Use Case", () => {
 
     const project = makeProject({});
     const utilityPole = makeUtilityPole({});
-    vi.spyOn(utilityPole, "calculateSectionLengthInMM").mockReturnValue(500);
+    vi.spyOn(utilityPole, "calculateSectionLengthInMM").mockReturnValue(80);
 
     const group = makeGroup({});
 
@@ -173,12 +201,13 @@ describe("Calculate Budget Use Case", () => {
           group,
           level: 1,
           tensionLevel: "LOW",
+          onStrongSideDirection: true,
           untiedMaterials: [],
           cableConnectors: [],
           poleScrews: [
             GroupItem.createPoleScrew({
               groupId: group.id,
-              lengthAdd: 0,
+              lengthAdd: 50,
               quantity: 1,
               type: "poleScrew",
             }),
@@ -190,6 +219,7 @@ describe("Calculate Budget Use Case", () => {
     const result = await sut.execute({
       project,
       parsedPoints: [parsedPoint],
+      parsedSpans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();
@@ -217,6 +247,7 @@ describe("Calculate Budget Use Case", () => {
           group,
           level: 1,
           tensionLevel: "LOW",
+          onStrongSideDirection: true,
           untiedMaterials: [],
           poleScrews: [],
           cableConnectors: [
@@ -234,6 +265,7 @@ describe("Calculate Budget Use Case", () => {
     const result = await sut.execute({
       project,
       parsedPoints: [parsedPoint],
+      parsedSpans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();
@@ -268,6 +300,7 @@ describe("Calculate Budget Use Case", () => {
           group,
           level: 1,
           tensionLevel: "MEDIUM",
+          onStrongSideDirection: true,
           untiedMaterials: [],
           poleScrews: [],
           cableConnectors: [
@@ -286,6 +319,7 @@ describe("Calculate Budget Use Case", () => {
     const result = await sut.execute({
       project,
       parsedPoints: [parsedPoint],
+      parsedSpans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();
@@ -325,6 +359,7 @@ describe("Calculate Budget Use Case", () => {
           group,
           level: 1,
           tensionLevel: "LOW",
+          onStrongSideDirection: false,
           untiedMaterials: [],
           poleScrews: [],
           cableConnectors: [
@@ -342,6 +377,7 @@ describe("Calculate Budget Use Case", () => {
     const result = await sut.execute({
       project,
       parsedPoints: [parsedPoint],
+      parsedSpans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();

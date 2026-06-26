@@ -9,6 +9,7 @@ import { InMemoryProjectsBudgetRepository } from "test/repositories/eletrical-di
 import { CalculateBudgetUseCase } from "../budget/calculate-budget";
 import {
   ParsedPointToCreate,
+  ParsedSpan,
   ValidateManyPointsUseCase,
 } from "../point/validate-many-points";
 import { BuildProjectBudgetUseCase } from "./build-project-budget";
@@ -23,7 +24,7 @@ describe("Build Project Budget Use Case", () => {
     inMemoryProjectsBudgetRepository = new InMemoryProjectsBudgetRepository();
 
     // Esse 'as unknown as ...' é para enganar o TypeScript,
-    // pois não o testes desses casos de uso já foram
+    // pois os testes desses casos de uso já foram
     // executados em outros arquivos
     validateManyPointsUseCase = {
       execute: vi.fn(),
@@ -44,6 +45,7 @@ describe("Build Project Budget Use Case", () => {
     const project = makeProject({}, new UniqueEntityID("proj-1"));
     const point = makePoint({}, new UniqueEntityID("point-1"));
     const parsedPointsStub = [{ point }];
+    const parsedSpansStub: ParsedSpan[] = [];
 
     const projectMaterialStub = ProjectMaterial.create({
       itemId: new UniqueEntityID("item-1"),
@@ -57,6 +59,7 @@ describe("Build Project Budget Use Case", () => {
       right({
         project,
         parsedPoints: parsedPointsStub as unknown as ParsedPointToCreate[],
+        parsedSpans: parsedSpansStub,
       }),
     );
 
@@ -70,6 +73,7 @@ describe("Build Project Budget Use Case", () => {
     const result = await sut.execute({
       projectId: "proj-1",
       points: [],
+      spans: [],
     });
 
     expect(result.isRight()).toBeTruthy();
@@ -95,6 +99,7 @@ describe("Build Project Budget Use Case", () => {
     const result = await sut.execute({
       projectId: "invalid-id",
       points: [],
+      spans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();
@@ -109,7 +114,7 @@ describe("Build Project Budget Use Case", () => {
     const project = makeProject({});
 
     vi.spyOn(validateManyPointsUseCase, "execute").mockResolvedValue(
-      right({ project, parsedPoints: [] }),
+      right({ project, parsedPoints: [], parsedSpans: [] }),
     );
 
     vi.spyOn(calculateBudgetUseCase, "execute").mockResolvedValue(
@@ -119,6 +124,7 @@ describe("Build Project Budget Use Case", () => {
     const result = await sut.execute({
       projectId: "proj-1",
       points: [],
+      spans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();
@@ -134,20 +140,19 @@ describe("Build Project Budget Use Case", () => {
   it("should return NotAllowedError if repository throws an exception", async () => {
     const project = makeProject({});
 
-    // Mocks de Sucesso nos UseCases
     vi.spyOn(validateManyPointsUseCase, "execute").mockResolvedValue(
       right({
         project,
         parsedPoints: [
           { point: makePoint({}) },
         ] as unknown as ParsedPointToCreate[],
+        parsedSpans: [],
       }),
     );
     vi.spyOn(calculateBudgetUseCase, "execute").mockResolvedValue(
       right({ project, projectMaterials: [] }),
     );
 
-    // Mock do Repositório lançando exceção
     vi.spyOn(
       inMemoryProjectsBudgetRepository,
       "saveProjectBudgetMaterials",
@@ -156,6 +161,7 @@ describe("Build Project Budget Use Case", () => {
     const result = await sut.execute({
       projectId: "proj-1",
       points: [],
+      spans: [],
     });
 
     expect(result.isLeft()).toBeTruthy();

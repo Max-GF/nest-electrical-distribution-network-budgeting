@@ -81,4 +81,7 @@ export class InMemoryPoleScrewsRepository implements PoleScrewsRepository {
     );
     return orderedPoleScrews;
   }
+  async findByIds(ids: string[]): Promise<PoleScrew[]> {
+    return this.items.filter((item) => ids.includes(item.id.toString()));
+  }
 }

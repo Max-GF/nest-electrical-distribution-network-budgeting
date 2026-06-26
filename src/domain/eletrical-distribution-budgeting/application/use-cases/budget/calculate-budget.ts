@@ -18,11 +18,13 @@ import {
   ParsedPointCables,
   ParsedPointToCreate,
   ParsedPointUtilityPole,
+  ParsedSpan,
 } from "../point/validate-many-points";
 
 interface CalculateBudgetUseCaseRequest {
   project: Project;
   parsedPoints: ParsedPointToCreate[];
+  parsedSpans: ParsedSpan[];
 }
 
 type CalculateBudgetUseCaseResponse = Either<
@@ -39,19 +41,19 @@ export class CalculateBudgetUseCase {
     private poleScrewsRepository: PoleScrewsRepository,
     private cableConnectorsRepository: CableConnectorsRepository,
   ) {}
+
   async execute({
     project,
     parsedPoints,
+    parsedSpans,
   }: CalculateBudgetUseCaseRequest): Promise<CalculateBudgetUseCaseResponse> {
     const allProjectMaterials: ProjectMaterial[] = [];
 
     const [orderedByLengthPoleScrews, allCableConnectors] = await Promise.all([
       this.poleScrewsRepository.getAllOrderedByLength(),
-      // Agora pegamos todos sem ordem específica, já que a busca é por ID exato
       this.cableConnectorsRepository.getAll(),
     ]);
 
-    // 2. Itera sobre os pontos já parseados/validados
     for (const parsedPoint of parsedPoints) {
       const calculatedMaterialsResult = await this.calculatePointMaterials({
         project,
@@ -69,10 +71,45 @@ export class CalculateBudgetUseCase {
       );
     }
 
+    // Cabos dos vãos — materiais avulsos sem pointId e sem groupSpecs
+    const spanMaterialsResult = this.calculateSpanMaterials({
+      project,
+      parsedSpans,
+    });
+
+    if (spanMaterialsResult.isLeft()) {
+      return left(spanMaterialsResult.value);
+    }
+
+    allProjectMaterials.push(...spanMaterialsResult.value);
+
     return right({
       project,
       projectMaterials: allProjectMaterials,
     });
+  }
+
+  // Gera um ProjectMaterial por vão, usando a extensão como quantidade.
+  // Sem pointId e sem groupSpecs — são itens avulsos do projeto.
+  private calculateSpanMaterials({
+    project,
+    parsedSpans,
+  }: {
+    project: Project;
+    parsedSpans: ParsedSpan[];
+  }): Either<never, ProjectMaterial[]> {
+    return right(
+      parsedSpans.map((span) =>
+        ProjectMaterial.create({
+          quantity: span.extension,
+          itemId: span.cable.id,
+          itemType: "cable",
+          projectId: project.id,
+          pointId: undefined,
+          groupSpecs: undefined,
+        }),
+      ),
+    );
   }
 
   async calculatePointMaterials({
@@ -97,7 +134,7 @@ export class CalculateBudgetUseCase {
       pointUtilityPole,
     } = parsedPoint;
 
-    // Adiciona os materiais avulsos do ponto (Se houver)
+    // Materiais avulsos do ponto
     pointUntiedMaterials.forEach((untiedMaterial) => {
       pointMaterials.push(
         ProjectMaterial.create({
@@ -111,8 +148,9 @@ export class CalculateBudgetUseCase {
       );
     });
 
-    // Adiciona os materiais avulsos de cada grupo do ponto
+    // Materiais de cada grupo do ponto
     for (const pointGroup of pointGroupsWithItems) {
+      // Materiais avulsos do grupo
       pointGroup.untiedMaterials.forEach((untiedMaterial) => {
         pointMaterials.push(
           ProjectMaterial.create({
@@ -136,6 +174,7 @@ export class CalculateBudgetUseCase {
           pointUtilityPole: pointUtilityPole,
           tensionLevel: pointGroup.tensionLevel,
           level: pointGroup.level,
+          onStrongSideDirection: pointGroup.onStrongSideDirection,
           groupId: pointGroup.group.id,
           projectId: project.id,
           pointId: point.id,
@@ -161,13 +200,15 @@ export class CalculateBudgetUseCase {
         },
         allCableConnectors,
       );
+
       if (groupCableConnectors.isLeft()) {
         return left(groupCableConnectors.value);
       }
+
       pointMaterials.push(...groupCableConnectors.value);
     }
 
-    // Adiciona o poste, se ele for novo
+    // Poste, se for novo
     if (pointUtilityPole.isNew) {
       pointMaterials.push(
         ProjectMaterial.create({
@@ -180,25 +221,8 @@ export class CalculateBudgetUseCase {
       );
     }
 
-    // Adiciona os cabos, se eles forem novos
-    [
-      pointCables.lowTensionCables?.entranceCable,
-      pointCables.lowTensionCables?.exitCable,
-      pointCables.mediumTensionCables?.entranceCable,
-      pointCables.mediumTensionCables?.exitCable,
-    ].forEach((pointCable) => {
-      if (pointCable?.isNew) {
-        pointMaterials.push(
-          ProjectMaterial.create({
-            quantity: 1,
-            itemId: pointCable.cable.id,
-            itemType: "cable",
-            projectId: project.id,
-            pointId: point.id,
-          }),
-        );
-      }
-    });
+    // Nota: cabos não são mais inseridos aqui.
+    // Eles são gerados a partir dos vãos (spans) em calculateSpanMaterials().
 
     return right({ projectMaterials: pointMaterials });
   }
@@ -212,6 +236,7 @@ export class CalculateBudgetUseCase {
       pointUtilityPole,
       tensionLevel,
       level,
+      onStrongSideDirection,
     }: {
       groupId: UniqueEntityID;
       projectId: UniqueEntityID;
@@ -220,11 +245,10 @@ export class CalculateBudgetUseCase {
       pointUtilityPole: ParsedPointUtilityPole;
       tensionLevel: "LOW" | "MEDIUM";
       level: number;
+      onStrongSideDirection: boolean;
     },
     orderedByLengthPoleScrews: PoleScrew[],
   ): Promise<Either<ResourceNotFoundError, ProjectMaterial[]>> {
-    // Lógica para calcular os parafusos de fixação do grupo
-
     const calculatedGroupPoleScrews: ProjectMaterial[] = [];
 
     for (const poleScrewItem of groupPoleScrews) {
@@ -232,11 +256,14 @@ export class CalculateBudgetUseCase {
         pointUtilityPole.utilityPole.calculateSectionLengthInMM(
           level,
           tensionLevel,
+          onStrongSideDirection,
         );
+
       const suitablePoleScrew = this.findSuitablePoleScrew(
-        utilityLevelLengthInMM,
+        utilityLevelLengthInMM + (poleScrewItem.lengthAdd ?? 0),
         orderedByLengthPoleScrews,
       );
+
       if (!suitablePoleScrew) {
         return left(
           new ResourceNotFoundError(
@@ -244,6 +271,7 @@ export class CalculateBudgetUseCase {
           ),
         );
       }
+
       calculatedGroupPoleScrews.push(
         ProjectMaterial.create({
           quantity: poleScrewItem.quantity,
@@ -259,6 +287,7 @@ export class CalculateBudgetUseCase {
         }),
       );
     }
+
     return right(calculatedGroupPoleScrews);
   }
 
@@ -284,8 +313,6 @@ export class CalculateBudgetUseCase {
   ): Promise<
     Either<ResourceNotFoundError | NotAllowedError, ProjectMaterial[]>
   > {
-    // Lógica para calcular os conectores de cabo do grupo
-
     const calculatedGroupCableConnectors: ProjectMaterial[] = [];
 
     for (const cableConnectorItem of groupCableConnectors) {
@@ -356,6 +383,7 @@ export class CalculateBudgetUseCase {
         }),
       );
     }
+
     return right(calculatedGroupCableConnectors);
   }
 
@@ -395,18 +423,15 @@ export class CalculateBudgetUseCase {
     allCableConnectors: CableConnector[],
   ): CableConnector | null {
     const suitableConnector = allCableConnectors.find((connector) => {
-      // Regra 1: O conector DEVE ter o cabo de entrada nas suas opções
       const matchesEntrance = connector.entranceCablesOptionsIds.some((id) =>
         id.equals(requiredEntranceCableId),
       );
 
       if (!matchesEntrance) return false;
 
-      // Regra 2: Se for conector de um lado só ("alça"/strap), fechou! É esse.
       if (isOneSideConnector) return true;
 
-      // Regra 3: Se precisa conectar dois lados, o conector DEVE ter o cabo de saída nas opções
-      if (!requiredExitCableId) return false; // Fail-safe (já testado antes, mas garante a tipagem)
+      if (!requiredExitCableId) return false;
 
       const matchesExit =
         connector.exitCablesOptionsIds?.some((id) =>

@@ -105,20 +105,18 @@ export class UtilityPole extends Entity<UtilityPoleProps> {
         throw new Error("Invalid medium voltage level");
       }
       return (
-        this.props.mediumVoltageStartSectionLengthInMM +
-        this.props.mediumVoltageSectionLengthAddBylevelInMM *
-          (level - 1) *
-          strongSideMultiplier
+        (this.props.mediumVoltageStartSectionLengthInMM +
+          this.props.mediumVoltageSectionLengthAddBylevelInMM * (level - 1)) *
+        strongSideMultiplier
       );
     } else {
       if (level < 1 || level > this.lowVoltageLevelsCount) {
         throw new Error("Invalid low voltage level");
       }
       return (
-        this.props.lowVoltageStartSectionLengthInMM +
-        this.props.lowVoltageSectionLengthAddBylevelInMM *
-          (level - 1) *
-          strongSideMultiplier
+        (this.props.lowVoltageStartSectionLengthInMM +
+          this.props.lowVoltageSectionLengthAddBylevelInMM * (level - 1)) *
+        strongSideMultiplier
       );
     }
   }
