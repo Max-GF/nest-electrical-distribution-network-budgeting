@@ -25,6 +25,13 @@ import { PoleScrewsRepository } from "src/domain/eletrical-distribution-budgetin
 import { UtilityPolesRepository } from "src/domain/eletrical-distribution-budgeting/application/repositories/utility-poles-repository";
 import { ProjectMaterialWithDetails } from "src/domain/eletrical-distribution-budgeting/enterprise/entities/value-objects/project-material-with-details";
 
+const spanRequestSchema = z.object({
+  name: z.string(),
+  cableId: z.string().uuid(),
+  extension: z.number(),
+  tensionLevel: z.enum(["LOW", "MEDIUM"]),
+});
+
 const cableRequestSchema = z.object({
   isNew: z.boolean(),
   cableId: z.string().uuid(),
@@ -54,6 +61,7 @@ const pointGroupRequestSchema = z.object({
   tensionLevel: z.enum(["LOW", "MEDIUM"]),
   level: z.number(),
   groupId: z.string().uuid(),
+  onStrongSideDirection: z.boolean(),
 });
 
 const untiedMaterialRequestSchema = z.object({
@@ -72,6 +80,7 @@ const pointToValidateRequestSchema = z.object({
 
 const calculateBudgetBodySchema = z.object({
   points: z.array(pointToValidateRequestSchema),
+  spans: z.array(spanRequestSchema),
 });
 
 type CalculateBudgetBodySchema = z.infer<typeof calculateBudgetBodySchema>;
@@ -97,12 +106,13 @@ export class CalculateBudgetController {
     body: CalculateBudgetBodySchema,
     @Param("projectId") projectId: string,
   ) {
-    const { points } = body;
+    const { points, spans } = body;
 
     // 1. Validação dos pontos
     const validationResult = await this.validateManyPointsUseCase.execute({
-      points,
       projectId,
+      points,
+      spans,
     });
 
     if (validationResult.isLeft()) {
@@ -119,12 +129,13 @@ export class CalculateBudgetController {
       }
     }
 
-    const { parsedPoints, project } = validationResult.value;
+    const { parsedPoints, project, parsedSpans } = validationResult.value;
 
     // 2. Cálculo do Orçamento (Entidades Puras)
     const budgetResult = await this.calculateBudgetUseCase.execute({
       project,
       parsedPoints,
+      parsedSpans,
     });
 
     if (budgetResult.isLeft()) {

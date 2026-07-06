@@ -18,6 +18,13 @@ import { ValidateManyPointsDto } from "src/infra/http/swagger/eletrical-distribu
 import { ValidateManyPointsResponse } from "src/infra/http/swagger/eletrical-distribution-budgeting/responses/point/validate-many-points.response";
 import { z } from "zod";
 
+const spanRequestSchema = z.object({
+  name: z.string(),
+  cableId: z.string().uuid(),
+  extension: z.number(),
+  tensionLevel: z.enum(["LOW", "MEDIUM"]),
+});
+
 const cableRequestSchema = z.object({
   isNew: z.boolean(),
   cableId: z.string().uuid(),
@@ -47,6 +54,7 @@ const pointGroupRequestSchema = z.object({
   tensionLevel: z.enum(["LOW", "MEDIUM"]),
   level: z.number(),
   groupId: z.string().uuid(),
+  onStrongSideDirection: z.boolean(),
 });
 
 const untiedMaterialRequestSchema = z.object({
@@ -65,6 +73,7 @@ const pointToValidateRequestSchema = z.object({
 
 const validateManyPointsBodySchema = z.object({
   points: z.array(pointToValidateRequestSchema),
+  spans: z.array(spanRequestSchema),
 });
 
 const validateManyPointsParamsSchema = z.object({
@@ -85,11 +94,12 @@ export class ValidateManyPointsController {
     body: ValidateManyPointsDto,
   ) {
     const { projectId } = params;
-    const { points } = body;
+    const { points, spans } = body;
 
     const result = await this.validateManyPointsUseCase.execute({
       projectId,
       points,
+      spans,
     });
 
     if (result.isLeft()) {
@@ -110,11 +120,12 @@ export class ValidateManyPointsController {
       throw new BadRequestException();
     }
 
-    const { project, parsedPoints } = result.value;
+    const { project, parsedPoints, parsedSpans } = result.value;
 
     return {
       projectName: project.name,
       parsedPoints: parsedPoints.map(ValidateManyPointsPresenter.toHttp),
+      parsedSpans: parsedSpans.map(ValidateManyPointsPresenter.toHttpSpan),
     };
   }
 }

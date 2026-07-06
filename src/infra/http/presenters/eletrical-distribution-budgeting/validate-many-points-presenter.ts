@@ -1,4 +1,7 @@
-import { ParsedPointToCreate } from "src/domain/eletrical-distribution-budgeting/application/use-cases/point/validate-many-points";
+import {
+  ParsedPointToCreate,
+  ParsedSpan,
+} from "src/domain/eletrical-distribution-budgeting/application/use-cases/point/validate-many-points";
 import { CablePresenter } from "./cable-presenter";
 import { PointPresenter } from "./point-presenter";
 import { UtilityPolePresenter } from "./utility-pole-presenter";
@@ -68,6 +71,14 @@ export class ValidateManyPointsPresenter {
         quantity: item.quantity,
         materialName: item.material.description,
       })),
+    };
+  }
+  static toHttpSpan(span: ParsedSpan) {
+    return {
+      name: span.name,
+      cable: CablePresenter.toHttp(span.cable),
+      extension: span.extension,
+      tensionLevel: span.tensionLevel,
     };
   }
 }

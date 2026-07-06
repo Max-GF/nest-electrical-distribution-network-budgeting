@@ -101,7 +101,11 @@ export class CalculateBudgetUseCase {
     return right(
       parsedSpans.map((span) =>
         ProjectMaterial.create({
-          quantity: span.extension,
+          quantity:
+            span.cable.unit.toLowerCase() === "kg" &&
+            span.cable.meterToKgConversionFactor
+              ? span.extension * span.cable.meterToKgConversionFactor
+              : span.extension,
           itemId: span.cable.id,
           itemType: "cable",
           projectId: project.id,

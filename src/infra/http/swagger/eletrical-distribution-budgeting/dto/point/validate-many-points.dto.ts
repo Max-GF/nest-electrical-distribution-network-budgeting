@@ -83,6 +83,10 @@ class PointGroupRequest {
   @ApiProperty({ example: "123e4567-e89b-12d3-a456-426614174000" })
   @IsUUID()
   groupId!: string;
+
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  onStrongSideDirection!: boolean;
 }
 
 class UntiedMaterialRequest {
@@ -93,6 +97,25 @@ class UntiedMaterialRequest {
   @ApiProperty({ example: "123e4567-e89b-12d3-a456-426614174000" })
   @IsUUID()
   materialId!: string;
+}
+
+// Classe adicionada para representar os Spans
+class SpanRequest {
+  @ApiProperty({ example: "Vão 1" })
+  @IsString()
+  name!: string;
+
+  @ApiProperty({ example: "123e4567-e89b-12d3-a456-426614174000" })
+  @IsUUID()
+  cableId!: string;
+
+  @ApiProperty({ example: 35.5 })
+  @IsNumber()
+  extension!: number;
+
+  @ApiProperty({ example: "LOW", enum: ["LOW", "MEDIUM"] })
+  @IsEnum(["LOW", "MEDIUM"])
+  tensionLevel!: "LOW" | "MEDIUM";
 }
 
 export class PointToValidateRequestDto {
@@ -136,4 +159,11 @@ export class ValidateManyPointsDto {
   @ValidateNested({ each: true })
   @Type(() => PointToValidateRequestDto)
   points!: PointToValidateRequestDto[];
+
+  // Array de spans adicionado para bater com o Controller e Use Case
+  @ApiProperty({ type: [SpanRequest] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SpanRequest)
+  spans!: SpanRequest[];
 }
